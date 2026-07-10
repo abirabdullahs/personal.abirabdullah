@@ -28,78 +28,26 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { ProjectSection } from '@/components/admin/project-section';
+import { BlogSection } from '@/components/admin/blog-section';
+import { PostsSection } from '@/components/admin/posts-section';
+import { GallerySection } from '@/components/admin/gallery-section';
 import { toast } from "sonner";
 import { useRouter } from 'next/navigation';
 import { getSupabase } from '@/lib/supabase';
-
-// Fallback initial data
-const fallbackProjects = [
-  {
-    id: 1,
-    name: "Portfolio Website",
-    slug: "portfolio-website",
-    short_description: "A full-stack personal portfolio with admin dashboard and blog.",
-    tech_stack: ["Next.js", "Supabase", "Tailwind CSS", "Cloudinary"],
-    github_repo: "https://github.com",
-    live_link: "https://example.com",
-    image_url: "https://picsum.photos/seed/portfolio/800/600",
-  },
-  {
-    id: 2,
-    name: "E-commerce Platform",
-    slug: "ecommerce-platform",
-    short_description: "A modern e-commerce platform with real-time inventory management.",
-    tech_stack: ["React", "Node.js", "PostgreSQL", "Stripe"],
-    github_repo: "https://github.com",
-    live_link: "https://example.com",
-    image_url: "https://picsum.photos/seed/shop/800/600",
-  }
-];
-
-const fallbackBlogs = [
-  {
-    id: 1,
-    title: "The Future of Web Development",
-    slug: "future-of-web-dev",
-    excerpt: "Exploring the latest trends and technologies shaping the web in 2024.",
-    content: "The web is evolving faster than ever. From server components to AI-assisted coding, developers have more power and tools at their disposal than at any time in history. \n\nIn this blog post, we discuss how frameworks like Next.js are redefining server-side rendering, and how modern platforms allow deployment at scale in seconds.\n\n### Key Takeaways:\n1. Server Components reduce bundle size dramatically.\n2. AI tools enhance coding productivity without replacing foundational knowledge.\n3. Dynamic real-time databases make offline-first synchronization easier.",
-    published_at: "2024-03-20",
-    reading_time: 5,
-    category: "Tech",
-    status: "published",
-  },
-  {
-    id: 2,
-    title: "Mastering TypeScript Generics",
-    slug: "mastering-typescript-generics",
-    excerpt: "A deep dive into one of TypeScript's most powerful features.",
-    content: "Generics allow you to write reusable, type-safe components. In this guide, we will explore advanced generic patterns including mapped types, conditional types, and more.\n\nUsing generics ensures that your functions and interfaces can handle various data structures while retaining robust type checking. Let's look at a quick example of a dynamic repository interface:\n\n```typescript\ninterface Repository<T> {\n  getById(id: string): Promise<T>;\n  list(): Promise<T[]>;\n}\n```\n\nBy leveraging this pattern, you can write modular code that scales seamlessly with your enterprise application.",
-    published_at: "2024-03-15",
-    reading_time: 8,
-    category: "Development",
-    status: "published",
-  }
-];
-
-const fallbackGallery = [
-  { id: 1, url: "https://picsum.photos/seed/gal1/800/800", name: "Landscape" },
-  { id: 2, url: "https://picsum.photos/seed/gal2/800/800", name: "Coding Session" },
-  { id: 3, url: "https://picsum.photos/seed/gal3/800/800", name: "Conference" },
-  { id: 4, url: "https://picsum.photos/seed/gal4/800/800", name: "Hike" },
-  { id: 5, url: "https://picsum.photos/seed/gal5/800/800", name: "Office Setup" },
-  { id: 6, url: "https://picsum.photos/seed/gal6/800/800", name: "Project Launch" },
-];
+import { createDefaultProfile, initialActivityLogs, portfolioStorageKeys, readAdminAuthSession, readStoredCollection, writeAdminAuthSession, writeStoredCollection, type PortfolioBlog, type PortfolioGalleryItem, type PortfolioPost, type PortfolioProject, type PortfolioProfile } from '@/lib/portfolio-data';
 
 export default function AdminDashboard() {
   const router = useRouter();
   
   // Navigation tabs
-  const [currentTab, setCurrentTab] = React.useState<'dashboard' | 'projects' | 'blogs' | 'gallery' | 'database' | 'settings'>('dashboard');
+  const [currentTab, setCurrentTab] = React.useState<'dashboard' | 'projects' | 'blogs' | 'posts' | 'gallery' | 'database' | 'settings'>('dashboard');
   
   // Main state collections
-  const [projects, setProjects] = React.useState<any[]>([]);
-  const [blogs, setBlogs] = React.useState<any[]>([]);
-  const [gallery, setGallery] = React.useState<any[]>([]);
+  const [projects, setProjects] = React.useState<PortfolioProject[]>([]);
+  const [blogs, setBlogs] = React.useState<PortfolioBlog[]>([]);
+  const [posts, setPosts] = React.useState<PortfolioPost[]>([]);
+  const [gallery, setGallery] = React.useState<PortfolioGalleryItem[]>([]);
   const [activities, setActivities] = React.useState<any[]>([]);
   
   // Search and filters
@@ -113,6 +61,7 @@ export default function AdminDashboard() {
   const [editingBlog, setEditingBlog] = React.useState<any | null>(null);
   
   const [isGalleryModalOpen, setIsGalleryModalOpen] = React.useState(false);
+  const [isPostModalOpen, setIsPostModalOpen] = React.useState(false);
   
   const [deleteConfirm, setDeleteConfirm] = React.useState<{
     type: 'project' | 'blog' | 'gallery' | null;
@@ -145,6 +94,10 @@ export default function AdminDashboard() {
   const [galName, setGalName] = React.useState('');
   const [galUrl, setGalUrl] = React.useState('');
 
+  // Post form states
+  const [postText, setPostText] = React.useState('');
+  const [postVisibility, setPostVisibility] = React.useState('public');
+
   // Settings form states
   const [adminName, setAdminName] = React.useState('Abir Abdullah');
   const [adminRole, setAdminRole] = React.useState('Administrator');
@@ -153,62 +106,48 @@ export default function AdminDashboard() {
 
   // Initial load
   React.useEffect(() => {
-    // 1. Immediate local storage fallback rendering
-    const storedProjects = localStorage.getItem('portfolio_projects');
-    if (storedProjects) {
-      setProjects(JSON.parse(storedProjects));
-    } else {
-      setProjects(fallbackProjects);
-      localStorage.setItem('portfolio_projects', JSON.stringify(fallbackProjects));
+    const authSession = readAdminAuthSession();
+    if (!authSession?.authenticated) {
+      router.replace('/admin/login');
+      return;
     }
 
-    const storedBlogs = localStorage.getItem('portfolio_blogs');
-    if (storedBlogs) {
-      setBlogs(JSON.parse(storedBlogs));
-    } else {
-      setBlogs(fallbackBlogs);
-      localStorage.setItem('portfolio_blogs', JSON.stringify(fallbackBlogs));
-    }
+    const storedProjects = readStoredCollection<PortfolioProject[]>(portfolioStorageKeys.projects, []);
+    setProjects(storedProjects);
 
-    const storedGallery = localStorage.getItem('portfolio_gallery');
-    if (storedGallery) {
-      setGallery(JSON.parse(storedGallery));
-    } else {
-      setGallery(fallbackGallery);
-      localStorage.setItem('portfolio_gallery', JSON.stringify(fallbackGallery));
-    }
+    const storedBlogs = readStoredCollection<PortfolioBlog[]>(portfolioStorageKeys.blogs, []);
+    setBlogs(storedBlogs);
 
-    // Load custom profile settings
-    const storedProfile = localStorage.getItem('admin_profile');
+    const storedPosts = readStoredCollection<PortfolioPost[]>(portfolioStorageKeys.posts, []);
+    setPosts(storedPosts);
+
+    const storedGallery = readStoredCollection<PortfolioGalleryItem[]>(portfolioStorageKeys.gallery, []);
+    setGallery(storedGallery);
+
+    const storedProfile = readStoredCollection<PortfolioProfile | null>(portfolioStorageKeys.profile, null);
     if (storedProfile) {
-      const parsed = JSON.parse(storedProfile);
-      setAdminName(parsed.name || 'Abir Abdullah');
-      setAdminRole(parsed.role || 'Administrator');
-      setAdminEmail(parsed.email || 'personal.abirabdullah@gmail.com');
-      setAdminPassword(parsed.password || 'abir123456');
-    }
-
-    // Load activity logs
-    const storedLogs = localStorage.getItem('portfolio_activities');
-    if (storedLogs) {
-      setActivities(JSON.parse(storedLogs));
+      setAdminName(storedProfile.name || 'Abir Abdullah');
+      setAdminRole(storedProfile.role || 'Administrator');
+      setAdminEmail(storedProfile.email || 'personal.abirabdullah@gmail.com');
+      setAdminPassword(storedProfile.password || 'abir123456');
     } else {
-      const initialLogs = [
-        { id: 1, action: "Logged in to Admin Dashboard", time: "Just now" },
-        { id: 2, action: "Portfolio Website project synchronized", time: "1 hour ago" },
-        { id: 3, action: "Default blog articles initialized", time: "2 hours ago" }
-      ];
-      setActivities(initialLogs);
-      localStorage.setItem('portfolio_activities', JSON.stringify(initialLogs));
+      const defaults = createDefaultProfile();
+      setAdminName(defaults.name);
+      setAdminRole(defaults.role);
+      setAdminEmail(defaults.email);
+      setAdminPassword(defaults.password);
+      writeStoredCollection(portfolioStorageKeys.profile, defaults);
     }
 
-    // 2. Async database connection and dynamic data fetching
+    const storedLogs = readStoredCollection<any[]>(portfolioStorageKeys.activities, initialActivityLogs);
+    setActivities(storedLogs);
+
     const hasSupabase = !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
     if (hasSupabase) {
       setDbStatus('connected');
-      
+
       const client = getSupabase();
-      
+
       const fetchDatabaseData = async () => {
         try {
           const { data: projData, error: projError } = await client
@@ -217,11 +156,11 @@ export default function AdminDashboard() {
             .order('created_at', { ascending: false });
           if (projError) throw projError;
           if (projData) {
-            setProjects(projData);
-            localStorage.setItem('portfolio_projects', JSON.stringify(projData));
+            setProjects(projData as PortfolioProject[]);
+            writeStoredCollection(portfolioStorageKeys.projects, projData as PortfolioProject[]);
           }
         } catch (err) {
-          console.warn("Could not load projects from Supabase. Falling back to local state.", err);
+          console.warn('Could not load projects from Supabase. Falling back to local state.', err);
         }
 
         try {
@@ -231,11 +170,11 @@ export default function AdminDashboard() {
             .order('published_at', { ascending: false });
           if (blogError) throw blogError;
           if (blogData) {
-            setBlogs(blogData);
-            localStorage.setItem('portfolio_blogs', JSON.stringify(blogData));
+            setBlogs(blogData as PortfolioBlog[]);
+            writeStoredCollection(portfolioStorageKeys.blogs, blogData as PortfolioBlog[]);
           }
         } catch (err) {
-          console.warn("Could not load blogs from Supabase. Falling back to local state.", err);
+          console.warn('Could not load blogs from Supabase. Falling back to local state.', err);
         }
 
         try {
@@ -244,11 +183,11 @@ export default function AdminDashboard() {
             .select('*');
           if (galError) throw galError;
           if (galData) {
-            setGallery(galData);
-            localStorage.setItem('portfolio_gallery', JSON.stringify(galData));
+            setGallery(galData as PortfolioGalleryItem[]);
+            writeStoredCollection(portfolioStorageKeys.gallery, galData as PortfolioGalleryItem[]);
           }
         } catch (err) {
-          console.warn("Could not load gallery from Supabase. Falling back to local state.", err);
+          console.warn('Could not load gallery from Supabase. Falling back to local state.', err);
         }
       };
 
@@ -263,11 +202,11 @@ export default function AdminDashboard() {
     const newAct = {
       id: Date.now(),
       action: actionText,
-      time: "Just now"
+      time: 'Just now'
     };
     const updated = [newAct, ...activities.slice(0, 19)];
     setActivities(updated);
-    localStorage.setItem('portfolio_activities', JSON.stringify(updated));
+    writeStoredCollection(portfolioStorageKeys.activities, updated);
   };
 
   // Autogenerate slugs
@@ -285,6 +224,7 @@ export default function AdminDashboard() {
 
   // Sign out
   const handleSignOut = () => {
+    writeAdminAuthSession(null);
     toast.success("Logged out successfully");
     router.push('/admin/login');
   };
@@ -295,10 +235,10 @@ export default function AdminDashboard() {
     setProjName('');
     setProjSlug('');
     setProjDesc('');
-    setProjTech('React, Next.js, Tailwind CSS');
+    setProjTech('');
     setProjGithub('');
     setProjLive('');
-    setProjImage('https://picsum.photos/seed/' + Math.floor(Math.random() * 1000) + '/800/600');
+    setProjImage('');
     setIsProjectModalOpen(true);
   };
 
@@ -333,53 +273,51 @@ export default function AdminDashboard() {
       tech_stack: techArray,
       github_repo: projGithub || '#',
       live_link: projLive || '#',
-      image_url: projImage || 'https://picsum.photos/seed/portfolio/800/600',
+      image_url: projImage || '',
       created_at: editingProject ? editingProject.created_at : new Date().toISOString()
     };
 
-    if (dbStatus === 'connected') {
-      try {
-        const client = getSupabase();
-        if (editingProject) {
-          const { error } = await client
-            .from('projects')
-            .update({
+    try {
+      if (dbStatus === 'connected') {
+        const response = await fetch('/api/admin/crud', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: editingProject ? 'update' : 'create',
+            table: 'projects',
+            id: editingProject ? editingProject.id : undefined,
+            payload: {
               name: projName,
               slug: projSlug,
               short_description: projDesc,
               tech_stack: techArray,
               github_repo: projGithub || '#',
               live_link: projLive || '#',
-              image_url: projImage || 'https://picsum.photos/seed/portfolio/800/600'
-            })
-            .eq('id', targetId);
-          if (error) throw error;
-        } else {
-          const { error } = await client
-            .from('projects')
-            .insert([projectObj]);
-          if (error) throw error;
-        }
-        toast.success(editingProject ? "Project updated in database!" : "Project added to database!");
-      } catch (err: any) {
-        console.error("Supabase project save failed, falling back to local:", err);
-        toast.error(`Database save failed: ${err.message || err}. Saved to local sandbox instead.`);
+              image_url: projImage || ''
+            },
+          }),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Project save failed');
       }
-    }
 
-    if (editingProject) {
-      updatedProjects = projects.map(p => p.id === editingProject.id ? projectObj : p);
-      toast.success("Project updated successfully");
-      logActivity(`Updated project "${projName}"`);
-    } else {
-      updatedProjects = [projectObj, ...projects];
-      toast.success("Project added successfully");
-      logActivity(`Created project "${projName}"`);
-    }
+      if (editingProject) {
+        updatedProjects = projects.map(p => p.id === editingProject.id ? projectObj : p);
+        toast.success("Project updated successfully");
+        logActivity(`Updated project "${projName}"`);
+      } else {
+        updatedProjects = [projectObj, ...projects];
+        toast.success("Project added successfully");
+        logActivity(`Created project "${projName}"`);
+      }
 
-    setProjects(updatedProjects);
-    localStorage.setItem('portfolio_projects', JSON.stringify(updatedProjects));
-    setIsProjectModalOpen(false);
+      setProjects(updatedProjects);
+      writeStoredCollection(portfolioStorageKeys.projects, updatedProjects);
+      setIsProjectModalOpen(false);
+    } catch (err: any) {
+      console.error("Project save failed:", err);
+      toast.error(err.message || 'Unable to save project');
+    }
   };
 
   const handleDeleteProject = (id: any, name: string) => {
@@ -389,19 +327,20 @@ export default function AdminDashboard() {
   const executeDeleteProject = async (id: any, name: string) => {
     const filtered = projects.filter(p => p.id !== id);
     setProjects(filtered);
-    localStorage.setItem('portfolio_projects', JSON.stringify(filtered));
+    writeStoredCollection(portfolioStorageKeys.projects, filtered);
 
     if (dbStatus === 'connected') {
       try {
-        const client = getSupabase();
-        const { error } = await client
-          .from('projects')
-          .delete()
-          .eq('id', id);
-        if (error) throw error;
+        const response = await fetch('/api/admin/crud', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'delete', table: 'projects', id }),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Delete failed');
         toast.success(`"${name}" deleted from database and local storage`);
       } catch (err: any) {
-        console.error("Supabase project delete failed:", err);
+        console.error("Project delete failed:", err);
         toast.error(`Database delete failed: ${err.message || err}. Removed from local workspace only.`);
       }
     } else {
@@ -458,49 +397,47 @@ export default function AdminDashboard() {
 
     let updatedBlogs;
 
-    if (dbStatus === 'connected') {
-      try {
-        const client = getSupabase();
-        if (editingBlog) {
-          const { error } = await client
-            .from('blogs')
-            .update({
+    try {
+      if (dbStatus === 'connected') {
+        const response = await fetch('/api/admin/crud', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: editingBlog ? 'update' : 'create',
+            table: 'blogs',
+            id: editingBlog ? editingBlog.id : undefined,
+            payload: {
               title: blogTitle,
               slug: blogSlug,
               excerpt: blogExcerpt,
               content: blogContent,
               category: blogCategory,
               reading_time: Number(blogReadingTime),
-              status: blogStatus
-            })
-            .eq('id', targetId);
-          if (error) throw error;
-        } else {
-          const { error } = await client
-            .from('blogs')
-            .insert([blogObj]);
-          if (error) throw error;
-        }
-        toast.success(editingBlog ? "Blog post updated in database!" : "Blog post published to database!");
-      } catch (err: any) {
-        console.error("Supabase blog save failed, falling back to local:", err);
-        toast.error(`Database save failed: ${err.message || err}. Saved to local sandbox instead.`);
+              status: blogStatus,
+            },
+          }),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Blog save failed');
       }
-    }
 
-    if (editingBlog) {
-      updatedBlogs = blogs.map(b => b.id === editingBlog.id ? blogObj : b);
-      toast.success("Blog post updated successfully");
-      logActivity(`Updated blog post "${blogTitle}"`);
-    } else {
-      updatedBlogs = [blogObj, ...blogs];
-      toast.success("Blog post published successfully");
-      logActivity(`Created blog post "${blogTitle}"`);
-    }
+      if (editingBlog) {
+        updatedBlogs = blogs.map(b => b.id === editingBlog.id ? blogObj : b);
+        toast.success("Blog post updated successfully");
+        logActivity(`Updated blog post "${blogTitle}"`);
+      } else {
+        updatedBlogs = [blogObj, ...blogs];
+        toast.success("Blog post published successfully");
+        logActivity(`Created blog post "${blogTitle}"`);
+      }
 
-    setBlogs(updatedBlogs);
-    localStorage.setItem('portfolio_blogs', JSON.stringify(updatedBlogs));
-    setIsBlogModalOpen(false);
+      setBlogs(updatedBlogs);
+      writeStoredCollection(portfolioStorageKeys.blogs, updatedBlogs);
+      setIsBlogModalOpen(false);
+    } catch (err: any) {
+      console.error("Blog save failed:", err);
+      toast.error(err.message || 'Unable to save blog post');
+    }
   };
 
   const handleDeleteBlog = (id: any, title: string) => {
@@ -510,19 +447,20 @@ export default function AdminDashboard() {
   const executeDeleteBlog = async (id: any, title: string) => {
     const filtered = blogs.filter(b => b.id !== id);
     setBlogs(filtered);
-    localStorage.setItem('portfolio_blogs', JSON.stringify(filtered));
+    writeStoredCollection(portfolioStorageKeys.blogs, filtered);
 
     if (dbStatus === 'connected') {
       try {
-        const client = getSupabase();
-        const { error } = await client
-          .from('blogs')
-          .delete()
-          .eq('id', id);
-        if (error) throw error;
+        const response = await fetch('/api/admin/crud', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'delete', table: 'blogs', id }),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Delete failed');
         toast.success(`"${title}" deleted from database and local storage`);
       } catch (err: any) {
-        console.error("Supabase blog delete failed:", err);
+        console.error("Blog delete failed:", err);
         toast.error(`Database delete failed: ${err.message || err}. Removed from local workspace only.`);
       }
     } else {
@@ -535,7 +473,7 @@ export default function AdminDashboard() {
   // GALLERY CRUD
   const openAddGallery = () => {
     setGalName('');
-    setGalUrl('https://picsum.photos/seed/' + Math.floor(Math.random() * 1000) + '/800/800');
+    setGalUrl('');
     setIsGalleryModalOpen(true);
   };
 
@@ -553,26 +491,27 @@ export default function AdminDashboard() {
       url: galUrl
     };
 
-    if (dbStatus === 'connected') {
-      try {
-        const client = getSupabase();
-        const { error } = await client
-          .from('gallery')
-          .insert([newImg]);
-        if (error) throw error;
-        toast.success("Image added to gallery database!");
-      } catch (err: any) {
-        console.error("Supabase gallery save failed, falling back to local:", err);
-        toast.error(`Database save failed: ${err.message || err}. Saved to local sandbox instead.`);
+    try {
+      if (dbStatus === 'connected') {
+        const response = await fetch('/api/admin/crud', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'create', table: 'gallery', payload: newImg }),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Gallery save failed');
       }
-    }
 
-    const updated = [newImg, ...gallery];
-    setGallery(updated);
-    localStorage.setItem('portfolio_gallery', JSON.stringify(updated));
-    toast.success("Image uploaded to gallery");
-    logActivity(`Added image "${galName}" to gallery`);
-    setIsGalleryModalOpen(false);
+      const updated = [newImg, ...gallery];
+      setGallery(updated);
+      writeStoredCollection(portfolioStorageKeys.gallery, updated);
+      toast.success("Image uploaded to gallery");
+      logActivity(`Added image "${galName}" to gallery`);
+      setIsGalleryModalOpen(false);
+    } catch (err: any) {
+      console.error("Gallery save failed:", err);
+      toast.error(err.message || 'Unable to save gallery image');
+    }
   };
 
   const handleDeleteGallery = (id: any, name: string) => {
@@ -582,19 +521,20 @@ export default function AdminDashboard() {
   const executeDeleteGallery = async (id: any, name: string) => {
     const filtered = gallery.filter(g => g.id !== id);
     setGallery(filtered);
-    localStorage.setItem('portfolio_gallery', JSON.stringify(filtered));
+    writeStoredCollection(portfolioStorageKeys.gallery, filtered);
 
     if (dbStatus === 'connected') {
       try {
-        const client = getSupabase();
-        const { error } = await client
-          .from('gallery')
-          .delete()
-          .eq('id', id);
-        if (error) throw error;
+        const response = await fetch('/api/admin/crud', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'delete', table: 'gallery', id }),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Delete failed');
         toast.success(`"${name}" removed from database and local storage`);
       } catch (err: any) {
-        console.error("Supabase gallery delete failed:", err);
+        console.error("Gallery delete failed:", err);
         toast.error(`Database delete failed: ${err.message || err}. Removed from local workspace only.`);
       }
     } else {
@@ -613,17 +553,61 @@ export default function AdminDashboard() {
       email: adminEmail,
       password: adminPassword
     };
-    localStorage.setItem('admin_profile', JSON.stringify(profile));
+    writeStoredCollection(portfolioStorageKeys.profile, profile);
     
     // Also sync the login credentials
-    toast.success("Profile credentials updated successfully");
-    logActivity("Updated administrator credentials");
+    toast.success('Profile credentials updated successfully');
+    logActivity('Updated administrator credentials');
+  };
+
+  const openAddPost = () => {
+    setPostText('');
+    setPostVisibility('public');
+    setIsPostModalOpen(true);
+  };
+
+  const handleSavePost = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!postText.trim()) {
+      toast.error('Please enter some post content');
+      return;
+    }
+
+    const newPost: PortfolioPost = {
+      id: Date.now(),
+      text: postText,
+      visibility: postVisibility,
+      pinned: false,
+      created_at: new Date().toISOString(),
+    };
+
+    try {
+      if (dbStatus === 'connected') {
+        const response = await fetch('/api/admin/crud', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'create', table: 'posts', payload: newPost }),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Post save failed');
+      }
+
+      const updatedPosts = [newPost, ...posts];
+      setPosts(updatedPosts);
+      writeStoredCollection(portfolioStorageKeys.posts, updatedPosts);
+      setIsPostModalOpen(false);
+      logActivity('Added a project update');
+      toast.success('Post added successfully');
+    } catch (err: any) {
+      console.error('Post save failed:', err);
+      toast.error(err.message || 'Unable to save post');
+    }
   };
 
   // Filters search query
-  const filteredProjects = projects.filter(p => 
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    p.short_description.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredProjects = projects.filter((p) => 
+    (p.name || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
+    (p.short_description || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const filteredBlogs = blogs.filter(b => 
@@ -677,6 +661,15 @@ export default function AdminDashboard() {
           >
             <FileText className="w-4 h-4" />
             Blog Posts
+          </Button>
+
+          <Button 
+            variant="ghost" 
+            onClick={() => setCurrentTab('posts')} 
+            className={`w-full justify-start gap-3 font-medium transition-colors ${currentTab === 'posts' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent/50'}`}
+          >
+            <FileText className="w-4 h-4" />
+            Posts
           </Button>
           
           <Button 
@@ -757,6 +750,11 @@ export default function AdminDashboard() {
                 <Plus className="h-3.5 w-3.5" /> Add Image
               </Button>
             )}
+            {currentTab === 'posts' && (
+              <Button size="sm" onClick={openAddPost} className="text-xs gap-1">
+                <Plus className="h-3.5 w-3.5" /> Add Post
+              </Button>
+            )}
           </div>
         </header>
 
@@ -769,13 +767,14 @@ export default function AdminDashboard() {
                 {currentTab === 'dashboard' && 'Manage your personal portfolio, upload new project showcases, and write articles.'}
                 {currentTab === 'projects' && 'Add, update, and showcase your professional development and open-source projects.'}
                 {currentTab === 'blogs' && 'Create drafts and publish industry insight articles directly to your blog.'}
+                {currentTab === 'posts' && 'Manage project updates and short status posts for the public site.'}
                 {currentTab === 'gallery' && 'Maintain a visual directory of setups, conferences, and design achievements.'}
                 {currentTab === 'database' && 'View your Cloud Supabase connection details and table mapping status.'}
                 {currentTab === 'settings' && 'Update your name, administrator role, and dynamic dashboard login credentials.'}
               </p>
             </div>
             
-            {(currentTab === 'projects' || currentTab === 'blogs' || currentTab === 'gallery' || currentTab === 'dashboard') && (
+            {(currentTab === 'projects' || currentTab === 'blogs' || currentTab === 'posts' || currentTab === 'gallery' || currentTab === 'dashboard') && (
               <div className="relative shrink-0">
                 <Input 
                   placeholder="Search item..." 
@@ -902,175 +901,39 @@ export default function AdminDashboard() {
 
           {/* TAB 2: PROJECTS MANAGEMENT */}
           {currentTab === 'projects' && (
-            <div className="space-y-6">
-              <div className="flex justify-end">
-                <Button onClick={openAddProject} className="gap-1.5 text-xs">
-                  <Plus className="h-4 w-4" /> Add Project Showcase
-                </Button>
-              </div>
-
-              {filteredProjects.length === 0 ? (
-                <div className="text-center py-20 border rounded-lg bg-card">
-                  <Briefcase className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                  <h3 className="text-lg font-bold">No projects matched</h3>
-                  <p className="text-muted-foreground text-sm max-w-sm mx-auto mt-1">Try resetting your search query or add a new project dynamically using the button above.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {filteredProjects.map((p) => (
-                    <Card key={p.id} className="overflow-hidden group bg-card border-border flex flex-col h-full shadow-none hover:border-primary/50 transition-all duration-200">
-                      <div className="relative aspect-video w-full overflow-hidden bg-muted">
-                        <img 
-                          src={p.image_url} 
-                          alt={p.name} 
-                          className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300" 
-                        />
-                        <div className="absolute top-2 right-2 flex gap-1">
-                          <Button size="icon" variant="secondary" className="h-7 w-7 rounded-md opacity-90 hover:opacity-100" onClick={() => openEditProject(p)}>
-                            <Edit3 className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button size="icon" variant="destructive" className="h-7 w-7 rounded-md opacity-90 hover:opacity-100" onClick={() => handleDeleteProject(p.id, p.name)}>
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      </div>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-xl tracking-tight font-bold">{p.name}</CardTitle>
-                        <CardDescription className="line-clamp-2 text-xs mt-1 leading-relaxed">
-                          {p.short_description}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="mt-auto pt-4 border-t border-border/50 flex flex-col gap-3">
-                        <div className="flex flex-wrap gap-1.5">
-                          {p.tech_stack && Array.isArray(p.tech_stack) ? p.tech_stack.map((t: string) => (
-                            <Badge key={t} variant="secondary" className="text-[10px] px-1.5 py-0">
-                              {t}
-                            </Badge>
-                          )) : null}
-                        </div>
-                        <div className="flex justify-between items-center text-xs text-muted-foreground font-mono">
-                          <span className="truncate max-w-[120px]" title={p.slug}>slug: {p.slug}</span>
-                          <div className="flex gap-2">
-                            {p.github_repo && p.github_repo !== '#' && <Github className="h-3.5 w-3.5" />}
-                            {p.live_link && p.live_link !== '#' && <ExternalLink className="h-3.5 w-3.5" />}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </div>
+            <ProjectSection
+              projects={projects}
+              filteredProjects={filteredProjects}
+              onAdd={openAddProject}
+              onEdit={openEditProject}
+              onDelete={handleDeleteProject}
+            />
           )}
 
           {/* TAB 3: BLOGS MANAGEMENT */}
           {currentTab === 'blogs' && (
-            <div className="space-y-6">
-              <div className="flex justify-end">
-                <Button onClick={openAddBlog} className="gap-1.5 text-xs">
-                  <Plus className="h-4 w-4" /> Create and Publish Post
-                </Button>
-              </div>
-
-              {filteredBlogs.length === 0 ? (
-                <div className="text-center py-20 border rounded-lg bg-card">
-                  <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                  <h3 className="text-lg font-bold">No articles found</h3>
-                  <p className="text-muted-foreground text-sm max-w-sm mx-auto mt-1">Write your first portfolio insight article to inspire web developers and clients.</p>
-                </div>
-              ) : (
-                <Card className="shadow-none bg-card border-border overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className="border-b bg-muted/30 text-xs font-bold text-muted-foreground uppercase tracking-widest">
-                          <th className="p-4">Title</th>
-                          <th className="p-4">Category</th>
-                          <th className="p-4">Reading Time</th>
-                          <th className="p-4">Published At</th>
-                          <th className="p-4">Status</th>
-                          <th className="p-4 text-right">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border/60 text-sm">
-                        {filteredBlogs.map((b) => (
-                          <tr key={b.id} className="hover:bg-muted/10 transition-colors">
-                            <td className="p-4 font-semibold">
-                              <div>
-                                <p className="font-bold">{b.title}</p>
-                                <p className="text-xs text-muted-foreground font-mono truncate max-w-xs">slug: {b.slug}</p>
-                              </div>
-                            </td>
-                            <td className="p-4">
-                              <Badge variant="outline">{b.category}</Badge>
-                            </td>
-                            <td className="p-4 text-muted-foreground flex items-center gap-1.5 pt-6">
-                              <Clock className="h-3.5 w-3.5" /> {b.reading_time} mins
-                            </td>
-                            <td className="p-4 text-muted-foreground">{b.published_at}</td>
-                            <td className="p-4">
-                              <Badge className={b.status === 'published' ? 'bg-green-500/10 text-green-500 border-none' : 'bg-zinc-500/10 text-zinc-400 border-none'}>
-                                {b.status || 'published'}
-                              </Badge>
-                            </td>
-                            <td className="p-4 text-right space-x-1">
-                              <Button size="icon" variant="ghost" onClick={() => openEditBlog(b)} className="h-8 w-8 text-muted-foreground hover:text-foreground">
-                                <Edit3 className="h-4 w-4" />
-                              </Button>
-                              <Button size="icon" variant="ghost" onClick={() => handleDeleteBlog(b.id, b.title)} className="h-8 w-8 text-muted-foreground hover:text-destructive">
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </Card>
-              )}
-            </div>
+            <BlogSection
+              blogs={blogs}
+              filteredBlogs={filteredBlogs}
+              onAdd={openAddBlog}
+              onEdit={openEditBlog}
+              onDelete={handleDeleteBlog}
+            />
           )}
 
-          {/* TAB 4: GALLERY MANAGEMENT */}
-          {currentTab === 'gallery' && (
-            <div className="space-y-6">
-              <div className="flex justify-end">
-                <Button onClick={openAddGallery} className="gap-1.5 text-xs">
-                  <Plus className="h-4 w-4" /> Add Gallery Asset
-                </Button>
-              </div>
+          {/* TAB 4: POSTS MANAGEMENT */}
+          {currentTab === 'posts' && (
+            <PostsSection posts={posts} onAdd={openAddPost} />
+          )}
 
-              {filteredGallery.length === 0 ? (
-                <div className="text-center py-20 border rounded-lg bg-card">
-                  <ImageIcon className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                  <h3 className="text-lg font-bold">Empty gallery</h3>
-                  <p className="text-muted-foreground text-sm max-w-sm mx-auto mt-1">Upload pictures or design snapshots to build a spectacular visually dynamic feed.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                  {filteredGallery.map((g) => (
-                    <Card key={g.id} className="group relative overflow-hidden aspect-square border border-border bg-card shadow-none">
-                      <img 
-                        src={g.url} 
-                        alt={g.name} 
-                        className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-200" 
-                      />
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-3 text-white">
-                        <span className="text-xs font-semibold truncate bg-black/40 px-2 py-0.5 rounded w-fit">{g.name}</span>
-                        <Button 
-                          size="icon" 
-                          variant="destructive" 
-                          onClick={() => handleDeleteGallery(g.id, g.name)}
-                          className="h-7 w-7 self-end hover:bg-destructive"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </div>
+          {/* TAB 5: GALLERY MANAGEMENT */}
+          {currentTab === 'gallery' && (
+            <GallerySection
+              gallery={gallery}
+              filteredGallery={filteredGallery}
+              onAdd={openAddGallery}
+              onDelete={handleDeleteGallery}
+            />
           )}
 
           {/* TAB 5: DATABASE STATUS CONFIGURATION */}

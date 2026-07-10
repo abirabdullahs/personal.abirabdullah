@@ -5,39 +5,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import Image from "next/image";
 import { getSupabase } from '@/lib/supabase';
-
-const fallbackGallery = [
-  { id: 1, url: "https://picsum.photos/seed/gal1/800/800", name: "Landscape" },
-  { id: 2, url: "https://picsum.photos/seed/gal2/800/800", name: "Coding Session" },
-  { id: 3, url: "https://picsum.photos/seed/gal3/800/800", name: "Conference" },
-  { id: 4, url: "https://picsum.photos/seed/gal4/800/800", name: "Hike" },
-  { id: 5, url: "https://picsum.photos/seed/gal5/800/800", name: "Office Setup" },
-  { id: 6, url: "https://picsum.photos/seed/gal6/800/800", name: "Project Launch" },
-];
+import { portfolioStorageKeys, readStoredCollection, type PortfolioGalleryItem } from '@/lib/portfolio-data';
 
 export default function GalleryPage() {
-  const [images, setImages] = React.useState<any[]>(fallbackGallery);
+  const [images, setImages] = React.useState<PortfolioGalleryItem[]>([]);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    // 1. Immediate local load
-    try {
-      const stored = localStorage.getItem('portfolio_gallery');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setImages(parsed);
-        }
-      } else {
-        localStorage.setItem('portfolio_gallery', JSON.stringify(fallbackGallery));
-      }
-    } catch (e) {
-      console.error("Error loading gallery from localStorage", e);
-    } finally {
-      setLoading(false);
-    }
+    const stored = readStoredCollection<PortfolioGalleryItem[]>(portfolioStorageKeys.gallery, []);
+    setImages(stored);
+    setLoading(false);
 
-    // 2. Async background Supabase sync if credentials exist
     const hasSupabase = !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
     if (hasSupabase) {
       async function syncSupabase() {
@@ -46,14 +24,14 @@ export default function GalleryPage() {
           const { data, error } = await client
             .from('gallery')
             .select('*');
-          
+
           if (error) throw error;
           if (data && data.length > 0) {
-            setImages(data);
-            localStorage.setItem('portfolio_gallery', JSON.stringify(data));
+            setImages(data as PortfolioGalleryItem[]);
+            localStorage.setItem(portfolioStorageKeys.gallery, JSON.stringify(data));
           }
         } catch (err) {
-          console.warn("Background Supabase gallery sync bypassed:", err);
+          console.warn('Background Supabase gallery sync bypassed:', err);
         }
       }
       syncSupabase();
@@ -72,6 +50,10 @@ export default function GalleryPage() {
       {loading ? (
         <div className="flex justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      ) : images.length === 0 ? (
+        <div className="rounded-lg border border-dashed p-10 text-center text-muted-foreground">
+          The gallery is empty right now. Add images from the admin dashboard to populate this page.
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">

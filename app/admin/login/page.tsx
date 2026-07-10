@@ -18,6 +18,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { writeAdminAuthSession } from '@/lib/portfolio-data';
 
 const formSchema = z.object({
   email: z.string().email({
@@ -44,16 +45,25 @@ export default function LoginPage() {
     setIsLoading(true);
     
     try {
-      // In a real app, you'd use supabase.auth.signInWithPassword or NextAuth
-      // For now, let's simulate the check against env vars (for demo)
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      if (values.email === "personal.abirabdullah@gmail.com" && values.password === "abir123456") {
-        toast.success("Login successful");
-        router.push('/admin/dashboard');
-      } else {
-        toast.error("Invalid credentials");
+      const response = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Invalid credentials');
       }
+
+      writeAdminAuthSession({
+        email: values.email,
+        password: values.password,
+        authenticated: true,
+      });
+      toast.success("Login successful");
+      router.push('/admin/dashboard');
     } catch (error) {
       toast.error("An error occurred during login");
     } finally {

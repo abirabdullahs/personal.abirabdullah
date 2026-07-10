@@ -6,51 +6,17 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { getSupabase } from '@/lib/supabase';
-
-// Local fallback data
-const fallbackBlogs = [
-  {
-    id: 1,
-    title: "The Future of Web Development",
-    slug: "future-of-web-dev",
-    excerpt: "Exploring the latest trends and technologies shaping the web in 2024.",
-    published_at: "2024-03-20",
-    reading_time: 5,
-    category: "Tech",
-  },
-  {
-    id: 2,
-    title: "Mastering TypeScript Generics",
-    slug: "mastering-typescript-generics",
-    excerpt: "A deep dive into one of TypeScript's most powerful features.",
-    published_at: "2024-03-15",
-    reading_time: 8,
-    category: "Development",
-  }
-];
+import { portfolioStorageKeys, readStoredCollection, type PortfolioBlog } from '@/lib/portfolio-data';
 
 export default function BlogPage() {
-  const [blogs, setBlogs] = React.useState<any[]>(fallbackBlogs);
+  const [blogs, setBlogs] = React.useState<PortfolioBlog[]>([]);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    // 1. Immediate local load
-    try {
-      const stored = localStorage.getItem('portfolio_blogs');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setBlogs(parsed.filter((b: any) => b.status === 'published'));
-        }
-      } else {
-        localStorage.setItem('portfolio_blogs', JSON.stringify(fallbackBlogs));
-      }
-    } catch (e) {
-      console.error("Failed to read from localStorage", e);
-    }
+    const stored = readStoredCollection<PortfolioBlog[]>(portfolioStorageKeys.blogs, []);
+    setBlogs(stored.filter((b) => b.status === 'published'));
     setLoading(false);
 
-    // 2. Async background Supabase sync if credentials exist
     const hasSupabase = !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
     if (hasSupabase) {
       async function syncSupabase() {
@@ -61,14 +27,14 @@ export default function BlogPage() {
             .select('*')
             .eq('status', 'published')
             .order('published_at', { ascending: false });
-          
+
           if (error) throw error;
           if (data && data.length > 0) {
-            setBlogs(data);
-            localStorage.setItem('portfolio_blogs', JSON.stringify(data));
+            setBlogs(data as PortfolioBlog[]);
+            localStorage.setItem(portfolioStorageKeys.blogs, JSON.stringify(data));
           }
         } catch (err) {
-          console.warn("Background Supabase blogs sync bypassed:", err);
+          console.warn('Background Supabase blogs sync bypassed:', err);
         }
       }
       syncSupabase();
@@ -87,6 +53,10 @@ export default function BlogPage() {
       {loading ? (
         <div className="flex justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      ) : blogs.length === 0 ? (
+        <div className="rounded-lg border border-dashed p-10 text-center text-muted-foreground">
+          No published blog posts are available yet. Publish one from the admin dashboard to see it here.
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

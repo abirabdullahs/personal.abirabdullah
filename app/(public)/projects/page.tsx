@@ -7,53 +7,19 @@ import { Button } from "@/components/ui/button";
 import { ExternalLink, Github, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { getSupabase } from '@/lib/supabase';
-
-// Local fallback data
-const fallbackProjects = [
-  {
-    id: 1,
-    name: "Portfolio Website",
-    slug: "portfolio-website",
-    short_description: "A full-stack personal portfolio with admin dashboard and blog.",
-    tech_stack: ["Next.js", "Supabase", "Tailwind CSS", "Cloudinary"],
-    github_repo: "#",
-    live_link: "#",
-    image_url: "https://picsum.photos/seed/portfolio/800/600",
-  },
-  {
-    id: 2,
-    name: "E-commerce Platform",
-    slug: "ecommerce-platform",
-    short_description: "A modern e-commerce platform with real-time inventory management.",
-    tech_stack: ["React", "Node.js", "PostgreSQL", "Stripe"],
-    github_repo: "#",
-    live_link: "#",
-    image_url: "https://picsum.photos/seed/shop/800/600",
-  }
-];
+import { portfolioStorageKeys, readStoredCollection, type PortfolioProject } from '@/lib/portfolio-data';
 
 export default function ProjectsPage() {
-  const [projects, setProjects] = React.useState<any[]>(fallbackProjects);
+  const [projects, setProjects] = React.useState<PortfolioProject[]>([]);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    // 1. Immediate local load
-    try {
-      const stored = localStorage.getItem('portfolio_projects');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setProjects(parsed);
-        }
-      } else {
-        localStorage.setItem('portfolio_projects', JSON.stringify(fallbackProjects));
-      }
-    } catch (e) {
-      console.error("Failed to read from localStorage", e);
+    const stored = readStoredCollection<PortfolioProject[]>(portfolioStorageKeys.projects, []);
+    if (stored.length > 0) {
+      setProjects(stored);
     }
     setLoading(false);
 
-    // 2. Async background Supabase sync if credentials exist
     const hasSupabase = !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
     if (hasSupabase) {
       async function syncSupabase() {
@@ -63,14 +29,14 @@ export default function ProjectsPage() {
             .from('projects')
             .select('*')
             .order('created_at', { ascending: false });
-          
+
           if (error) throw error;
           if (data && data.length > 0) {
-            setProjects(data);
-            localStorage.setItem('portfolio_projects', JSON.stringify(data));
+            setProjects(data as PortfolioProject[]);
+            localStorage.setItem(portfolioStorageKeys.projects, JSON.stringify(data));
           }
         } catch (err) {
-          console.warn("Background Supabase projects sync bypassed:", err);
+          console.warn('Background Supabase projects sync bypassed:', err);
         }
       }
       syncSupabase();
@@ -90,13 +56,17 @@ export default function ProjectsPage() {
         <div className="flex justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
+      ) : projects.length === 0 ? (
+        <div className="rounded-lg border border-dashed p-10 text-center text-muted-foreground">
+          No projects have been added yet. The admin dashboard will populate this section once content is created.
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {projects.map((project) => (
             <Card key={project.id} className="overflow-hidden group">
               <div className="relative aspect-video overflow-hidden">
                 <Image
-                  src={project.image_url}
+                  src={project.image_url || '/placeholder.svg'}
                   alt={project.name}
                   fill
                   className="object-cover transition-transform duration-300 group-hover:scale-105"
