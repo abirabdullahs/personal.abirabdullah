@@ -1,0 +1,125 @@
+Table admin {
+  id int [pk, increment]
+  name varchar
+  email varchar [unique]
+  password varchar
+  avatar varchar
+  bio text
+  headline varchar
+  about text
+  phone varchar
+  location varchar
+  resume_link varchar
+  cover_image varchar
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table projects {
+  id int [pk, increment]
+  name varchar
+  slug varchar [unique]
+  short_description text
+  tech_stack text [note: 'store as JSON array, e.g. ["React", "Node.js", "PostgreSQL"]']
+  github_repo varchar
+  live_link varchar
+  featured bool
+  status varchar
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table project_images {
+  id int [pk, increment]
+  project_id int
+  image_url varchar
+  alt_text varchar
+  display_order int
+}
+
+Table posts {
+  id int [pk, increment]
+  project_id int [null]
+  text text
+  visibility varchar
+  pinned bool
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table post_images {
+  id int [pk, increment]
+  post_id int
+  image_url varchar
+  display_order int
+}
+
+Table blogs {
+  id int [pk, increment]
+  title varchar
+  slug varchar [unique]
+  excerpt text
+  content text
+  featured_image varchar
+  status varchar
+  reading_time int
+  views int
+  featured bool
+  published_at timestamp
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table blog_categories {
+  id int [pk, increment]
+  name varchar
+  slug varchar
+}
+
+Table blog_category_map {
+  blog_id int
+  category_id int
+  indexes {
+    (blog_id, category_id) [pk]
+  }
+}
+
+Table tags {
+  id int [pk, increment]
+  name varchar
+  slug varchar
+}
+
+Table blog_tags {
+  blog_id int
+  tag_id int
+  indexes {
+    (blog_id, tag_id) [pk]
+  }
+}
+
+Table gallery_albums {
+  id int [pk, increment]
+  name varchar
+  description text
+  cover_image varchar
+}
+
+Table gallery_images {
+  id int [pk, increment]
+  album_id int
+  image_url varchar
+  image_name varchar
+  caption text
+  display_order int
+  created_at timestamp
+}
+
+Ref: project_images.project_id > projects.id
+Ref: posts.project_id > projects.id
+Ref: post_images.post_id > posts.id
+Ref: blog_category_map.blog_id > blogs.id
+Ref: blog_category_map.category_id > blog_categories.id
+Ref: blog_tags.blog_id > blogs.id
+Ref: blog_tags.tag_id > tags.id
+Ref: gallery_images.album_id > gallery_albums.id
