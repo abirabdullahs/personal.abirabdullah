@@ -135,9 +135,14 @@ export default function HomePage() {
                 {profile.name}
               </h1>
 
-              <p className="text-lg md:text-xl text-muted-foreground max-w-xl leading-relaxed font-light">
-                {profile.headline ||
-                  profile.bio ||
+              {profile.headline && (
+                <p className="text-lg md:text-xl font-medium leading-relaxed">
+                  {profile.headline}
+                </p>
+              )}
+
+              <p className="text-base md:text-lg text-muted-foreground max-w-xl leading-relaxed font-light">
+                {profile.bio ||
                   'Second-year CSE student at BUET, passionate about web development and exploring AI/ML. I enjoy building modern, user-focused applications while continuously learning and experimenting with new technologies.'}
               </p>
 
