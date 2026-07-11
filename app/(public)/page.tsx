@@ -101,7 +101,7 @@ export default function HomePage() {
               <div className="relative w-56 h-56 md:w-full md:h-auto md:aspect-square">
                 <Avatar className="w-full h-full rounded-md border border-border shadow-sm">
                   <AvatarImage
-                    src={profile.avatar || 'https://picsum.photos/seed/admin/600/600'}
+                    src={profile.cover_image || 'https://picsum.photos/seed/admin/600/600'}
                     alt={profile.name}
                     className="object-cover rounded-md"
                   />
