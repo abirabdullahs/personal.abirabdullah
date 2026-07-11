@@ -13,6 +13,20 @@ import { portfolioStorageKeys, readStoredCollection, createDefaultSiteProfile, t
 const FALLBACK_ABOUT =
   "I am a developer who loves building things that live on the internet. My journey in web development started back in 2020, and since then I've worked on a variety of projects ranging from simple landing pages to complex web applications.";
 const categories = [...new Set(skills.map(skill => skill.category))];
+
+function formatMonthYear(dateStr: string): string {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return dateStr; // not a parseable date — show as-is
+  return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+}
+
+function formatDateRange(start: string, end: string): string {
+  const startLabel = formatMonthYear(start);
+  const endLabel = /present/i.test(end) ? 'Present' : formatMonthYear(end);
+  return `${startLabel} – ${endLabel}`;
+}
+
 function AboutPageClient() {
   const [profile, setProfile] = React.useState<SiteAdminProfile>(createDefaultSiteProfile());
 
@@ -67,7 +81,7 @@ function AboutPageClient() {
                     <CardTitle className="text-2xl">{exp.position}</CardTitle>
                     <CardDescription className="text-lg font-medium text-primary/80">{exp.company_name}</CardDescription>
                   </div>
-                  <Badge variant="outline" className="w-fit">{exp.start_date} - {exp.end_date}</Badge>
+                  <Badge variant="outline" className="w-fit">{formatDateRange(exp.start_date, exp.end_date)}</Badge>
                 </div>
               </CardHeader>
               <CardContent>
