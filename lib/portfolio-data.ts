@@ -93,14 +93,7 @@ export const portfolioStorageKeys = {
   activities: 'portfolio_activities',
   profile: 'admin_profile',
   siteProfile: 'site_admin_profile',
-  authSession: 'admin_auth_session',
 } as const;
-
-export type AdminAuthSession = {
-  email: string;
-  password: string;
-  authenticated: boolean;
-};
 
 export function hasSupabaseConfig() {
   return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
@@ -142,18 +135,6 @@ export function writeStoredCollection<T>(key: string, value: T) {
   }
 
   window.localStorage.setItem(key, JSON.stringify(value));
-}
-
-export function readAdminAuthSession(): AdminAuthSession | null {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-
-  return readStoredCollection<AdminAuthSession | null>(portfolioStorageKeys.authSession, null);
-}
-
-export function writeAdminAuthSession(session: AdminAuthSession | null) {
-  writeStoredCollection(portfolioStorageKeys.authSession, session);
 }
 
 export function createDefaultProfile(): PortfolioProfile {

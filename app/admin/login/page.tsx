@@ -18,7 +18,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { writeAdminAuthSession } from '@/lib/portfolio-data';
 
 const formSchema = z.object({
   email: z.string().email({
@@ -57,11 +56,8 @@ export default function LoginPage() {
         throw new Error(result.error || 'Invalid credentials');
       }
 
-      writeAdminAuthSession({
-        email: values.email,
-        password: values.password,
-        authenticated: true,
-      });
+      // The API call above already set the httpOnly session cookie —
+      // that's the only session mechanism now, nothing to store client-side.
       toast.success("Login successful");
       router.push('/admin/dashboard');
     } catch (error) {

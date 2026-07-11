@@ -37,7 +37,7 @@ import { MarkdownEditor } from '@/components/admin/markdown-editor';
 import { toast } from "sonner";
 import { useRouter } from 'next/navigation';
 import { getSupabase } from '@/lib/supabase';
-import { createDefaultAlbum, createDefaultProfile, initialActivityLogs, portfolioStorageKeys, readAdminAuthSession, readStoredCollection, writeAdminAuthSession, writeStoredCollection, type PortfolioBlog, type PortfolioGalleryAlbum, type PortfolioGalleryItem, type PortfolioPost, type PortfolioProject, type PortfolioProfile } from '@/lib/portfolio-data';
+import { createDefaultAlbum, createDefaultProfile, initialActivityLogs, portfolioStorageKeys, readStoredCollection, writeStoredCollection, type PortfolioBlog, type PortfolioGalleryAlbum, type PortfolioGalleryItem, type PortfolioPost, type PortfolioProject, type PortfolioProfile } from '@/lib/portfolio-data';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -125,13 +125,10 @@ export default function AdminDashboard() {
   const [passwordSaving, setPasswordSaving] = React.useState(false);
 
   // Initial load
+  // NOTE: Auth is fully handled by middleware.ts via the httpOnly session cookie.
+  // If this component is rendering at all, the middleware has already verified
+  // the session server-side — no client-side localStorage gate needed here.
   React.useEffect(() => {
-    const authSession = readAdminAuthSession();
-    if (!authSession?.authenticated) {
-      router.replace('/admin/login');
-      return;
-    }
-
     const storedProjects = readStoredCollection<PortfolioProject[]>(portfolioStorageKeys.projects, []);
     setProjects(storedProjects);
 
@@ -255,9 +252,13 @@ export default function AdminDashboard() {
     }
   }, [blogTitle, editingBlog]);
 
-  // Sign out
-  const handleSignOut = () => {
-    writeAdminAuthSession(null);
+  // Sign out — clears the real httpOnly session cookie via the API, then leaves.
+  const handleSignOut = async () => {
+    try {
+      await fetch('/api/admin/logout', { method: 'POST' });
+    } catch (err) {
+      console.error('Logout request failed:', err);
+    }
     toast.success("Logged out successfully");
     router.push('/admin/login');
   };
