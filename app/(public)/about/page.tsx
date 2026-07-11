@@ -1,17 +1,50 @@
+'use client';
+
+import * as React from 'react';
 import { education } from "@/data/education";
 import { skills } from "@/data/skills";
 import { experiences } from "@/data/experiences";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { getSupabase } from '@/lib/supabase';
+import { portfolioStorageKeys, readStoredCollection, createDefaultSiteProfile, type SiteAdminProfile } from '@/lib/portfolio-data';
+
+const FALLBACK_ABOUT =
+  "I am a developer who loves building things that live on the internet. My journey in web development started back in 2020, and since then I've worked on a variety of projects ranging from simple landing pages to complex web applications.";
 
 export default function AboutPage() {
+  const [profile, setProfile] = React.useState<SiteAdminProfile>(createDefaultSiteProfile());
+
+  React.useEffect(() => {
+    const stored = readStoredCollection<SiteAdminProfile | null>(portfolioStorageKeys.siteProfile, null);
+    if (stored) setProfile(stored);
+
+    const hasSupabase = !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+    if (!hasSupabase) return;
+
+    async function syncSupabase() {
+      try {
+        const client = getSupabase();
+        const { data, error } = await client.from('admin').select('*').limit(1).maybeSingle();
+        if (error) throw error;
+        if (data) {
+          setProfile(data as SiteAdminProfile);
+          localStorage.setItem(portfolioStorageKeys.siteProfile, JSON.stringify(data));
+        }
+      } catch (err) {
+        console.warn('Background Supabase about-profile sync bypassed:', err);
+      }
+    }
+    syncSupabase();
+  }, []);
+
   return (
     <div className="container px-4 py-16 space-y-24">
       {/* Intro */}
       <section className="max-w-3xl">
         <h1 className="text-4xl font-bold tracking-tight mb-6">About Me</h1>
-        <p className="text-lg text-muted-foreground leading-relaxed">
-          I am a developer who loves building things that live on the internet. My journey in web development started back in 2020, and since then I&apos;ve worked on a variety of projects ranging from simple landing pages to complex web applications.
+        <p className="text-lg text-muted-foreground leading-relaxed whitespace-pre-wrap">
+          {profile.about || profile.bio || FALLBACK_ABOUT}
         </p>
       </section>
 

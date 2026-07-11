@@ -14,6 +14,23 @@ export type PortfolioProject = {
   status?: string;
 };
 
+// Mirrors the `admin` table columns in the DB schema. This is the public-facing
+// profile shown on the Home/About pages (name, headline, avatar, bio, etc.) —
+// distinct from PortfolioProfile below, which backs the local admin login form.
+export type SiteAdminProfile = {
+  id?: number | string;
+  name: string;
+  email?: string;
+  avatar?: string;
+  bio?: string;
+  headline?: string;
+  about?: string;
+  phone?: string;
+  location?: string;
+  resume_link?: string;
+  cover_image?: string;
+};
+
 export type PortfolioBlog = {
   id: number | string;
   title: string;
@@ -63,6 +80,7 @@ export const portfolioStorageKeys = {
   gallery: 'portfolio_gallery',
   activities: 'portfolio_activities',
   profile: 'admin_profile',
+  siteProfile: 'site_admin_profile',
   authSession: 'admin_auth_session',
 } as const;
 
@@ -132,6 +150,15 @@ export function createDefaultProfile(): PortfolioProfile {
     role: 'Administrator',
     email: 'personal.abirabdullah@gmail.com',
     password: 'abir123456',
+  };
+}
+
+export function createDefaultSiteProfile(): SiteAdminProfile {
+  return {
+    name: 'Abir Abdullah',
+    headline: 'Full-Stack Developer',
+    bio: "A Full-Stack Developer specializing in high-performance web applications. I bridge the gap between complex backend logic and sleek, intuitive user interfaces.",
+    avatar: 'https://picsum.photos/seed/admin/400/400',
   };
 }
 
