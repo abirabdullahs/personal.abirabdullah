@@ -6,6 +6,7 @@ import { skills } from "@/data/skills";
 import { experiences } from "@/data/experiences";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/empty-state";
 import { getSupabase } from '@/lib/supabase';
 import { portfolioStorageKeys, readStoredCollection, createDefaultSiteProfile, type SiteAdminProfile } from '@/lib/portfolio-data';
 
@@ -52,7 +53,13 @@ function AboutPageClient() {
       <section>
         <h2 className="text-3xl font-bold tracking-tight mb-8 text-primary">Experience</h2>
         <div className="space-y-8">
-          {experiences.map((exp) => (
+          {experiences.length === 0 ? (
+            <EmptyState
+              title="No experience listed yet"
+              message="Work history will show up here once it's added."
+            />
+          ) : (
+            experiences.map((exp) => (
             <Card key={exp.company_name}>
               <CardHeader>
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
@@ -71,7 +78,8 @@ function AboutPageClient() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+            ))
+          )}
         </div>
       </section>
 
@@ -79,7 +87,13 @@ function AboutPageClient() {
       <section>
         <h2 className="text-3xl font-bold tracking-tight mb-8 text-primary">Education</h2>
         <div className="space-y-8">
-          {education.map((edu) => (
+          {education.length === 0 ? (
+            <EmptyState
+              title="No education listed yet"
+              message="Academic background will show up here once it's added."
+            />
+          ) : (
+            education.map((edu) => (
             <Card key={edu.institution}>
               <CardHeader>
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
@@ -95,7 +109,8 @@ function AboutPageClient() {
                 <p className="mt-4 font-bold text-primary">CGPA: {edu.cgpa}</p>
               </CardContent>
             </Card>
-          ))}
+            ))
+          )}
         </div>
       </section>
 

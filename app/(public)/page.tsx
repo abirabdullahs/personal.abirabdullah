@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { skills } from '@/data/skills';
 import { experiences } from '@/data/experiences';
+import { EmptyState } from '@/components/empty-state';
 import { getSupabase } from '@/lib/supabase';
 import {
   portfolioStorageKeys,
@@ -311,37 +312,45 @@ export default function HomePage() {
       {/* Featured Skills (hardcoded, per architecture doc) */}
       <section className="container px-4">
         <h2 className="font-serif text-3xl tracking-tight mb-8 border-b border-border pb-4">Top Skills</h2>
-        <div className="flex flex-wrap gap-3">
-          {skills.slice(0, 8).map((skill) => (
-            <div
-              key={skill.name}
-              className="px-4 py-2 rounded-none bg-secondary text-secondary-foreground font-medium border border-border text-sm"
-            >
-              {skill.name}
-            </div>
-          ))}
-        </div>
+        {skills.length === 0 ? (
+          <EmptyState title="No skills listed yet" message="Top skills will show up here once they're added." />
+        ) : (
+          <div className="flex flex-wrap gap-3">
+            {skills.slice(0, 8).map((skill) => (
+              <div
+                key={skill.name}
+                className="px-4 py-2 rounded-none bg-secondary text-secondary-foreground font-medium border border-border text-sm"
+              >
+                {skill.name}
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Recent Experience (hardcoded, per architecture doc) */}
       <section className="container px-4">
         <h2 className="font-serif text-3xl tracking-tight mb-8 border-b border-border pb-4">Experience</h2>
-        <div className="space-y-8">
-          {experiences.map((exp, idx) => (
-            <div key={exp.company_name} className="grid grid-cols-[auto_1fr] gap-6">
-              <span className="font-serif text-2xl text-muted-foreground/50 leading-none pt-1">
-                {String(idx + 1).padStart(2, '0')}
-              </span>
-              <div className="border-l border-border pl-6 py-1">
-                <h3 className="text-xl font-semibold">{exp.position}</h3>
-                <p className="text-muted-foreground text-sm uppercase tracking-wide mt-1">
-                  {exp.company_name} • {exp.start_date} - {exp.end_date}
-                </p>
-                <p className="mt-3 max-w-2xl leading-relaxed">{exp.description}</p>
+        {experiences.length === 0 ? (
+          <EmptyState title="No experience listed yet" message="Work history will show up here once it's added." />
+        ) : (
+          <div className="space-y-8">
+            {experiences.map((exp, idx) => (
+              <div key={exp.company_name} className="grid grid-cols-[auto_1fr] gap-6">
+                <span className="font-serif text-2xl text-muted-foreground/50 leading-none pt-1">
+                  {String(idx + 1).padStart(2, '0')}
+                </span>
+                <div className="border-l border-border pl-6 py-1">
+                  <h3 className="text-xl font-semibold">{exp.position}</h3>
+                  <p className="text-muted-foreground text-sm uppercase tracking-wide mt-1">
+                    {exp.company_name} • {exp.start_date} - {exp.end_date}
+                  </p>
+                  <p className="mt-3 max-w-2xl leading-relaxed">{exp.description}</p>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );

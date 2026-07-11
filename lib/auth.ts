@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken';
+import { SignJWT, jwtVerify } from 'jose';
 
 const JWT_SECRET = process.env.JWT_SECRET as string;
 const COOKIE_NAME = 'admin_session';
@@ -10,19 +10,25 @@ export type AdminTokenPayload = {
   name: string;
 };
 
-export function signAdminToken(payload: AdminTokenPayload): string {
+function getSecretKey(): Uint8Array {
   if (!JWT_SECRET) {
     throw new Error('JWT_SECRET is not set in environment variables.');
   }
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: TOKEN_TTL });
+  return new TextEncoder().encode(JWT_SECRET);
 }
 
-export function verifyAdminToken(token: string): AdminTokenPayload | null {
-  if (!JWT_SECRET) {
-    throw new Error('JWT_SECRET is not set in environment variables.');
-  }
+export async function signAdminToken(payload: AdminTokenPayload): Promise<string> {
+  return new SignJWT({ ...payload })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime(TOKEN_TTL)
+    .sign(getSecretKey());
+}
+
+export async function verifyAdminToken(token: string): Promise<AdminTokenPayload | null> {
   try {
-    return jwt.verify(token, JWT_SECRET) as AdminTokenPayload;
+    const { payload } = await jwtVerify(token, getSecretKey());
+    return payload as unknown as AdminTokenPayload;
   } catch {
     return null;
   }
@@ -32,7 +38,7 @@ export const ADMIN_COOKIE_NAME = COOKIE_NAME;
 
 // Helper used inside API routes (not middleware) to check auth from the
 // incoming request's cookies.
-export function getAdminFromRequest(request: Request): AdminTokenPayload | null {
+export async function getAdminFromRequest(request: Request): Promise<AdminTokenPayload | null> {
   const cookieHeader = request.headers.get('cookie') || '';
   const match = cookieHeader
     .split(';')

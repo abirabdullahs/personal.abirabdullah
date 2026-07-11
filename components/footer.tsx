@@ -1,16 +1,42 @@
+import Link from 'next/link';
+
+const footerLinks = [
+  { name: 'Projects', href: '/projects' },
+  { name: 'Blog', href: '/blog' },
+  { name: 'Posts', href: '/posts' },
+  { name: 'Gallery', href: '/gallery' },
+  { name: 'About', href: '/about' },
+];
+
 export function Footer() {
+  const year = new Date().getFullYear();
+
   return (
-    <footer className="border-t bg-muted/40">
-      <div className="container flex flex-col items-center justify-between gap-4 py-10 md:h-24 md:flex-row md:py-0 px-4">
-        <div className="flex flex-col items-center gap-4 px-8 md:flex-row md:gap-2 md:px-0">
-          <p className="text-center text-sm leading-loose text-muted-foreground md:text-left">
-            Built by You. All rights reserved. &copy; {new Date().getFullYear()}
-          </p>
+    <footer className="border-t border-border bg-background">
+      <div className="container px-4 py-10 space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div>
+            <p className="font-heading text-lg">Abir Abdullah</p>
+            <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+              Full-stack developer — building and writing about web applications.
+            </p>
+          </div>
+          <nav className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+            {footerLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="text-muted-foreground transition-colors hover:text-foreground"
+              >
+                {link.name}
+              </Link>
+            ))}
+          </nav>
         </div>
-        <div className="flex items-center gap-4">
-          <p className="text-sm text-muted-foreground">
-            A-Z Portfolio Application
-          </p>
+
+        <div className="border-t border-border pt-6 flex flex-col md:flex-row items-center justify-between gap-2 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+          <span>© {year} Abir Abdullah. All rights reserved.</span>
+          <span>— Engineering Journal</span>
         </div>
       </div>
     </footer>

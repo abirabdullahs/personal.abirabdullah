@@ -1,11 +1,12 @@
-export const education = [
-  {
-    institution: "Your University",
-    degree: "Bachelor of Science",
-    department: "Computer Science and Engineering",
-    start_year: 2020,
-    end_year: 2024,
-    cgpa: "3.80",
-    description: "Focused on software engineering, algorithms, and web development."
-  }
-];
+export type EducationEntry = {
+  institution: string;
+  degree: string;
+  department: string;
+  start_year: number;
+  end_year: number | string;
+  cgpa?: string;
+  description?: string;
+};
+
+// Add your real education history here.
+export const education: EducationEntry[] = [];

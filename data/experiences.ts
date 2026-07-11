@@ -1,14 +1,19 @@
-export const experiences = [
-  {
-    company_name: "Tech Solutions Inc.",
-    position: "Frontend Developer Intern",
-    employment_type: "Full-time",
-    work_mode: "Remote",
-    start_date: "2023-06-01",
-    end_date: "2023-08-31",
-    description: "Developed and maintained responsive web applications using React and Tailwind CSS.",
-    documents: [
-      { type: "Offer Letter", title: "Offer Letter", google_drive_link: "#" }
-    ]
-  }
-];
+export type ExperienceDocument = {
+  type: string;
+  title: string;
+  google_drive_link: string;
+};
+
+export type ExperienceEntry = {
+  company_name: string;
+  position: string;
+  employment_type: string;
+  work_mode: string;
+  start_date: string;
+  end_date: string;
+  description: string;
+  documents?: ExperienceDocument[];
+};
+
+// Add your real work experience here.
+export const experiences: ExperienceEntry[] = [];

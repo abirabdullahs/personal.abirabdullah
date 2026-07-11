@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminToken, ADMIN_COOKIE_NAME } from '@/lib/auth';
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Let the login page and login API through without a token.
@@ -21,7 +21,7 @@ export function middleware(request: NextRequest) {
   }
 
   const token = request.cookies.get(ADMIN_COOKIE_NAME)?.value;
-  const session = token ? verifyAdminToken(token) : null;
+  const session = token ? await verifyAdminToken(token) : null;
 
   if (!session) {
     if (isAdminApi) {

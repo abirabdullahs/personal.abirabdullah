@@ -5,7 +5,7 @@ import { getAdminFromRequest } from '@/lib/auth';
 
 export async function POST(request: Request) {
   try {
-    const session = getAdminFromRequest(request);
+    const session = await getAdminFromRequest(request);
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized. Please log in.' }, { status: 401 });
     }
