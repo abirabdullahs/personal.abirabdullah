@@ -101,11 +101,24 @@ export default function AdminDashboard() {
   const [postProjectId, setPostProjectId] = React.useState<string>('');
   const [postPinned, setPostPinned] = React.useState(false);
 
-  // Settings form states
+  // Settings form states — public profile shown on Home/About (maps to the `admin` DB row)
+  const [profileId, setProfileId] = React.useState<string | number | null>(null);
   const [adminName, setAdminName] = React.useState('Abir Abdullah');
-  const [adminRole, setAdminRole] = React.useState('Administrator');
-  const [adminEmail, setAdminEmail] = React.useState('personal.abirabdullah@gmail.com');
-  const [adminPassword, setAdminPassword] = React.useState('abir123456');
+  const [adminEmail, setAdminEmail] = React.useState('');
+  const [profileHeadline, setProfileHeadline] = React.useState('');
+  const [profileBio, setProfileBio] = React.useState('');
+  const [profileAbout, setProfileAbout] = React.useState('');
+  const [profilePhone, setProfilePhone] = React.useState('');
+  const [profileLocation, setProfileLocation] = React.useState('');
+  const [profileAvatar, setProfileAvatar] = React.useState('');
+  const [profileResumeLink, setProfileResumeLink] = React.useState('');
+  const [profileLoading, setProfileLoading] = React.useState(false);
+
+  // Password change form states (separate from profile — hits its own secure endpoint)
+  const [currentPassword, setCurrentPassword] = React.useState('');
+  const [newPassword, setNewPassword] = React.useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = React.useState('');
+  const [passwordSaving, setPasswordSaving] = React.useState(false);
 
   // Initial load
   React.useEffect(() => {
@@ -547,20 +560,125 @@ export default function AdminDashboard() {
   };
 
 
-  // SAVE PROFILE SETTINGS
-  const handleSaveProfile = (e: React.FormEvent) => {
+  // Load the real site profile (admin table row) when the Settings tab is opened
+  const loadSiteProfile = React.useCallback(async () => {
+    setProfileLoading(true);
+    try {
+      const response = await fetch('/api/admin/crud', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'list', table: 'admin', orderBy: 'id' }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Unable to load profile');
+
+      const row = Array.isArray(result.data) ? result.data[0] : null;
+      if (row) {
+        setProfileId(row.id ?? null);
+        setAdminName(row.name || '');
+        setAdminEmail(row.email || '');
+        setProfileHeadline(row.headline || '');
+        setProfileBio(row.bio || '');
+        setProfileAbout(row.about || '');
+        setProfilePhone(row.phone || '');
+        setProfileLocation(row.location || '');
+        setProfileAvatar(row.avatar || '');
+        setProfileResumeLink(row.resume_link || '');
+      }
+    } catch (err: any) {
+      console.error('Failed to load site profile:', err);
+      toast.error(err.message || 'Unable to load profile from database');
+    } finally {
+      setProfileLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (currentTab === 'settings' && dbStatus === 'connected') {
+      loadSiteProfile();
+    }
+  }, [currentTab, dbStatus, loadSiteProfile]);
+
+  // SAVE PROFILE SETTINGS — writes straight to the `admin` table in Supabase.
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    const profile = {
+
+    if (!profileId) {
+      toast.error('No admin record loaded yet. Please wait or reconnect the database.');
+      return;
+    }
+
+    const payload = {
       name: adminName,
-      role: adminRole,
-      email: adminEmail,
-      password: adminPassword
+      headline: profileHeadline,
+      bio: profileBio,
+      about: profileAbout,
+      phone: profilePhone,
+      location: profileLocation,
+      avatar: profileAvatar,
+      resume_link: profileResumeLink,
+      updated_at: new Date().toISOString(),
     };
-    writeStoredCollection(portfolioStorageKeys.profile, profile);
-    
-    // Also sync the login credentials
-    toast.success('Profile credentials updated successfully');
-    logActivity('Updated administrator credentials');
+
+    try {
+      const response = await fetch('/api/admin/crud', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update', table: 'admin', id: profileId, payload }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Profile save failed');
+
+      // Refresh the cache the public Home/About pages read on first paint
+      writeStoredCollection(portfolioStorageKeys.siteProfile, { id: profileId, email: adminEmail, ...payload });
+
+      toast.success('Profile updated — changes are now live on the public site');
+      logActivity('Updated public profile information');
+    } catch (err: any) {
+      console.error('Profile save failed:', err);
+      toast.error(err.message || 'Unable to save profile');
+    }
+  };
+
+  // CHANGE PASSWORD — goes through its own bcrypt-verified endpoint, never touches
+  // the profile payload above.
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!currentPassword || !newPassword) {
+      toast.error('Please fill in both password fields');
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      toast.error('New passwords do not match');
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast.error('New password must be at least 8 characters');
+      return;
+    }
+
+    setPasswordSaving(true);
+    try {
+      const response = await fetch('/api/admin/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Password change failed');
+
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmNewPassword('');
+      toast.success('Password changed successfully');
+      logActivity('Changed admin login password');
+    } catch (err: any) {
+      console.error('Password change failed:', err);
+      toast.error(err.message || 'Unable to change password');
+    } finally {
+      setPasswordSaving(false);
+    }
   };
 
   const openAddPost = () => {
@@ -752,7 +870,7 @@ export default function AdminDashboard() {
             className={`w-full justify-start gap-3 font-medium transition-colors ${currentTab === 'settings' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent/50'}`}
           >
             <Settings className="w-4 h-4" />
-            Profile Credentials
+            Settings
           </Button>
         </nav>
 
@@ -764,7 +882,7 @@ export default function AdminDashboard() {
             </Avatar>
             <div className="overflow-hidden">
               <p className="text-xs font-semibold truncate">{adminName}</p>
-              <p className="text-[10px] text-muted-foreground truncate uppercase font-bold tracking-wider">{adminRole}</p>
+              <p className="text-[10px] text-muted-foreground truncate uppercase font-bold tracking-wider">Administrator</p>
             </div>
           </div>
           <Button variant="ghost" size="icon" onClick={handleSignOut} title="Sign Out" className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-8 w-8">
@@ -816,7 +934,7 @@ export default function AdminDashboard() {
         <div className="p-8 flex-1 overflow-y-auto space-y-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-extrabold tracking-tight capitalize">{currentTab === 'settings' ? 'Credentials' : currentTab}</h1>
+              <h1 className="text-3xl font-extrabold tracking-tight capitalize">{currentTab === 'settings' ? 'Settings' : currentTab}</h1>
               <p className="text-muted-foreground mt-1">
                 {currentTab === 'dashboard' && 'Manage your personal portfolio, upload new project showcases, and write articles.'}
                 {currentTab === 'projects' && 'Add, update, and showcase your professional development and open-source projects.'}
@@ -824,7 +942,7 @@ export default function AdminDashboard() {
                 {currentTab === 'posts' && 'Manage project updates and short status posts for the public site.'}
                 {currentTab === 'gallery' && 'Maintain a visual directory of setups, conferences, and design achievements.'}
                 {currentTab === 'database' && 'View your Cloud Supabase connection details and table mapping status.'}
-                {currentTab === 'settings' && 'Update your name, administrator role, and dynamic dashboard login credentials.'}
+                {currentTab === 'settings' && 'Update your public profile information and change your login password.'}
               </p>
             </div>
             
@@ -1133,36 +1251,95 @@ create policy "Allow all for admin writes" on gallery for all using (true) with 
 
           {/* TAB 6: SETTINGS / PROFILE CREDENTIALS */}
           {currentTab === 'settings' && (
-            <div className="max-w-xl">
+            <div className="max-w-xl space-y-8">
               <Card className="shadow-none bg-card border-border">
                 <CardHeader>
-                  <CardTitle className="text-lg font-bold">Dashboard Administrator Profile</CardTitle>
+                  <CardTitle className="text-lg font-bold">Public Profile</CardTitle>
                   <CardDescription>
-                    These credentials are saved locally so you can log in securely to this session.
+                    This information is shown on your public Home and About pages. Saved directly to your Supabase <code>admin</code> table.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <form onSubmit={handleSaveProfile} className="space-y-4">
+                  {dbStatus !== 'connected' ? (
+                    <p className="text-sm text-muted-foreground">
+                      Connect Supabase (see the Database tab) to load and edit your public profile.
+                    </p>
+                  ) : (
+                    <form onSubmit={handleSaveProfile} className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-muted-foreground uppercase">Display Name</label>
+                        <Input value={adminName} onChange={(e) => setAdminName(e.target.value)} className="bg-background border-border" disabled={profileLoading} />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-muted-foreground uppercase">Headline</label>
+                        <Input value={profileHeadline} onChange={(e) => setProfileHeadline(e.target.value)} placeholder="Full-Stack Developer" className="bg-background border-border" disabled={profileLoading} />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-muted-foreground uppercase">Short Bio (used on Home hero)</label>
+                        <Textarea value={profileBio} onChange={(e) => setProfileBio(e.target.value)} rows={3} className="bg-background border-border" disabled={profileLoading} />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-muted-foreground uppercase">About (used on About page)</label>
+                        <Textarea value={profileAbout} onChange={(e) => setProfileAbout(e.target.value)} rows={5} className="bg-background border-border" disabled={profileLoading} />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-muted-foreground uppercase">Avatar Image URL</label>
+                        <Input value={profileAvatar} onChange={(e) => setProfileAvatar(e.target.value)} className="bg-background border-border text-xs font-mono" disabled={profileLoading} />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-muted-foreground uppercase">Phone</label>
+                          <Input value={profilePhone} onChange={(e) => setProfilePhone(e.target.value)} className="bg-background border-border" disabled={profileLoading} />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-muted-foreground uppercase">Location</label>
+                          <Input value={profileLocation} onChange={(e) => setProfileLocation(e.target.value)} className="bg-background border-border" disabled={profileLoading} />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-muted-foreground uppercase">Resume Link</label>
+                        <Input value={profileResumeLink} onChange={(e) => setProfileResumeLink(e.target.value)} className="bg-background border-border text-xs font-mono" disabled={profileLoading} />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-muted-foreground uppercase">Login Email</label>
+                        <Input type="email" value={adminEmail} disabled className="bg-muted/30 border-border text-muted-foreground" />
+                        <p className="text-[10px] text-muted-foreground">Email isn&apos;t editable here since it&apos;s used to look up your account at login.</p>
+                      </div>
+
+                      <div className="flex justify-end pt-4 border-t">
+                        <Button type="submit" className="text-xs" disabled={profileLoading}>
+                          <Check className="h-3.5 w-3.5 mr-1.5" /> Save Profile
+                        </Button>
+                      </div>
+                    </form>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-none bg-card border-border">
+                <CardHeader>
+                  <CardTitle className="text-lg font-bold">Change Password</CardTitle>
+                  <CardDescription>
+                    Requires your current password. Updates the hashed password used for admin login.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleChangePassword} className="space-y-4">
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-muted-foreground uppercase">Display Name</label>
-                      <Input value={adminName} onChange={(e) => setAdminName(e.target.value)} className="bg-background border-border" />
+                      <label className="text-xs font-bold text-muted-foreground uppercase">Current Password</label>
+                      <Input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} className="bg-background border-border" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-muted-foreground uppercase">Display Role</label>
-                      <Input value={adminRole} onChange={(e) => setAdminRole(e.target.value)} className="bg-background border-border" />
+                      <label className="text-xs font-bold text-muted-foreground uppercase">New Password</label>
+                      <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="bg-background border-border" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-muted-foreground uppercase">Login Email</label>
-                      <Input type="email" value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} className="bg-background border-border" />
+                      <label className="text-xs font-bold text-muted-foreground uppercase">Confirm New Password</label>
+                      <Input type="password" value={confirmNewPassword} onChange={(e) => setConfirmNewPassword(e.target.value)} className="bg-background border-border" />
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-muted-foreground uppercase">Login Password</label>
-                      <Input type="password" value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} className="bg-background border-border" />
-                    </div>
-                    
                     <div className="flex justify-end pt-4 border-t">
-                      <Button type="submit" className="text-xs">
-                        <Check className="h-3.5 w-3.5 mr-1.5" /> Update Admin Credentials
+                      <Button type="submit" variant="destructive" className="text-xs" disabled={passwordSaving}>
+                        {passwordSaving ? 'Updating...' : 'Change Password'}
                       </Button>
                     </div>
                   </form>
