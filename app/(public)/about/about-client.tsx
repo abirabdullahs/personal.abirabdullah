@@ -39,7 +39,7 @@ function AboutPageClient() {
     async function syncSupabase() {
       try {
         const client = getSupabase();
-        const { data, error } = await client.from('admin').select('*').limit(1).maybeSingle();
+        const { data, error } = await client.from('admin_public_profile').select('*').limit(1).maybeSingle();
         if (error) throw error;
         if (data) {
           setProfile(data as SiteAdminProfile);

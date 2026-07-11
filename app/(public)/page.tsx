@@ -54,7 +54,7 @@ export default function HomePage() {
         const client = getSupabase();
 
         const [profileRes, projectsRes, postsRes, blogsRes] = await Promise.all([
-          client.from('admin').select('*').limit(1).maybeSingle(),
+          client.from('admin_public_profile').select('*').limit(1).maybeSingle(),
           client.from('projects').select('*').order('created_at', { ascending: false }),
           client.from('posts').select('*').eq('visibility', 'public').order('created_at', { ascending: false }),
           client.from('blogs').select('*').eq('status', 'published').order('published_at', { ascending: false }),
