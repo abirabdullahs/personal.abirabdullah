@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'motion/react';
 import { ArrowRight, Code, BookOpen, Image as ImageIcon, Loader2, Pin } from 'lucide-react';
@@ -90,8 +91,8 @@ export default function HomePage() {
     <div className="flex flex-col gap-20 pb-20">
       {/* Hero Section — editorial: image left, text right, hairline divider, serif display */}
       <section className="relative border-b border-border/70">
-        <div className="container px-4 py-20 md:py-28">
-          <div className="grid grid-cols-1 md:grid-cols-[minmax(0,340px)_1fr] gap-10 md:gap-16 items-center">
+        <div className="mx-auto max-w-7xl px-4 py-20 md:px-6 md:py-28 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)] gap-10 xl:gap-24 items-center">
             {/* Portrait */}
             <motion.div
               className="flex md:justify-start justify-center"
@@ -99,14 +100,14 @@ export default function HomePage() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <div className="relative w-56 h-56 md:w-full md:h-auto md:aspect-square">
-                <Avatar className="w-full h-full rounded-md border border-border shadow-sm">
+              <div className="relative w-56 h-56 md:w-72 md:h-72 lg:w-full lg:max-w-md rounded-3xl overflow-hidden border-4 border-emerald-800 shadow-xl">
+                <Avatar className="w-full h-full rounded-3xl border-none shadow-none">
                   <AvatarImage
                     src={profile.avatar || 'https://picsum.photos/seed/admin/600/600'}
                     alt={profile.name}
-                    className="object-cover rounded-md"
+                    className="object-cover rounded-3xl"
                   />
-                  <AvatarFallback className="rounded-md text-2xl">
+                  <AvatarFallback className="rounded-3xl text-2xl">
                     {profile.name
                       .split(' ')
                       .map((n) => n[0])
@@ -120,7 +121,7 @@ export default function HomePage() {
 
             {/* Copy */}
             <motion.div
-              className="space-y-6 text-center md:text-left md:border-l md:border-border/70 md:pl-16"
+              className="space-y-6 text-center md:text-left md:border-l md:border-border/70 md:pl-16 lg:pl-12"
               initial={{ opacity: 0, x: 16 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.15 }}
@@ -223,14 +224,27 @@ export default function HomePage() {
               </Button>
             </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-border">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {featuredProjects.map((project) => (
-              <Card key={project.id} className="rounded-none border-0 bg-background">
-                <CardHeader>
-                  <CardTitle className="font-serif text-xl font-normal">{project.name}</CardTitle>
-                  <CardDescription>{project.short_description}</CardDescription>
+              <Card key={project.id} className="overflow-hidden border-border bg-background shadow-sm">
+                {project.image_url ? (
+                  <div className="relative h-56 w-full overflow-hidden bg-muted">
+                    <Image
+                      src={project.image_url}
+                      alt={project.name}
+                      fill
+                      className="object-cover transition-transform duration-300 hover:scale-105"
+                      referrerPolicy="no-referrer"
+                    />
+                  </div>
+                ) : (
+                  <div className="h-56 bg-muted" />
+                )}
+                <CardHeader className="pt-5">
+                  <CardTitle className="font-serif text-xl font-semibold">{project.name}</CardTitle>
+                  <CardDescription className="line-clamp-2">{project.short_description}</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-0">
                   <div className="flex flex-wrap gap-2">
                     {Array.isArray(project.tech_stack) &&
                       project.tech_stack.slice(0, 4).map((tech) => (
@@ -257,21 +271,23 @@ export default function HomePage() {
               </Button>
             </Link>
           </div>
-          <div className="max-w-2xl divide-y divide-border border-y border-border">
+          <div className="grid grid-cols-1 gap-6">
             {latestPosts.map((post) => (
-              <div key={post.id} className="py-6">
-                <div className="flex items-center gap-2 mb-2">
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                    {post.created_at ? new Date(post.created_at).toLocaleDateString() : ''}
-                  </p>
-                  {post.pinned && (
-                    <Badge variant="default" className="gap-1 rounded-none">
-                      <Pin className="h-3 w-3" /> Pinned
-                    </Badge>
-                  )}
-                </div>
-                <p className="leading-relaxed line-clamp-3">{post.text}</p>
-              </div>
+              <Card key={post.id} className="overflow-hidden border-border bg-background shadow-sm">
+                <CardHeader className="pb-0">
+                  <div className="flex items-center justify-between gap-2 mb-3">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                      {post.created_at ? new Date(post.created_at).toLocaleDateString() : ''}
+                    </p>
+                    {post.pinned && (
+                      <Badge variant="default" className="gap-1 rounded-none">
+                        <Pin className="h-3 w-3" /> Pinned
+                      </Badge>
+                    )}
+                  </div>
+                  <CardDescription className="line-clamp-3 text-sm text-muted-foreground">{post.text}</CardDescription>
+                </CardHeader>
+              </Card>
             ))}
           </div>
         </section>
@@ -288,13 +304,26 @@ export default function HomePage() {
               </Button>
             </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-border">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {latestBlogs.map((blog) => (
-              <Link key={blog.id} href={`/blog/${blog.slug}`}>
-                <Card className="h-full rounded-none border-0 bg-background hover:bg-muted/40 transition-colors">
+              <Link key={blog.id} href={`/blog/${blog.slug}`} className="block">
+                <Card className="overflow-hidden border-border bg-background shadow-sm hover:shadow-md transition-shadow">
+                  {blog.featured_image ? (
+                    <div className="relative h-48 w-full overflow-hidden bg-muted">
+                      <Image
+                        src={blog.featured_image}
+                        alt={blog.title}
+                        fill
+                        className="object-cover transition-transform duration-300 hover:scale-105"
+                        referrerPolicy="no-referrer"
+                      />
+                    </div>
+                  ) : (
+                    <div className="h-48 bg-muted" />
+                  )}
                   <CardHeader>
-                    <CardTitle className="font-serif text-lg font-normal">{blog.title}</CardTitle>
-                    <CardDescription className="line-clamp-2">{blog.excerpt}</CardDescription>
+                    <CardTitle className="font-serif text-xl font-semibold">{blog.title}</CardTitle>
+                    <CardDescription className="line-clamp-3 text-sm text-muted-foreground">{blog.excerpt}</CardDescription>
                   </CardHeader>
                 </Card>
               </Link>

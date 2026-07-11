@@ -12,7 +12,7 @@ import { portfolioStorageKeys, readStoredCollection, createDefaultSiteProfile, t
 
 const FALLBACK_ABOUT =
   "I am a developer who loves building things that live on the internet. My journey in web development started back in 2020, and since then I've worked on a variety of projects ranging from simple landing pages to complex web applications.";
-
+const categories = [...new Set(skills.map(skill => skill.category))];
 function AboutPageClient() {
   const [profile, setProfile] = React.useState<SiteAdminProfile>(createDefaultSiteProfile());
 
@@ -118,7 +118,7 @@ function AboutPageClient() {
       <section>
         <h2 className="text-3xl font-bold tracking-tight mb-8 text-primary">Skills</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {['Frontend', 'Backend', 'Media'].map((category) => (
+          {categories.map((category) => (
             <Card key={category}>
               <CardHeader>
                 <CardTitle>{category}</CardTitle>
