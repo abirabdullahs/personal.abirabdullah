@@ -62,9 +62,10 @@ export default function AdminDashboard() {
   
   const [isGalleryModalOpen, setIsGalleryModalOpen] = React.useState(false);
   const [isPostModalOpen, setIsPostModalOpen] = React.useState(false);
+  const [editingPost, setEditingPost] = React.useState<PortfolioPost | null>(null);
   
   const [deleteConfirm, setDeleteConfirm] = React.useState<{
-    type: 'project' | 'blog' | 'gallery' | null;
+    type: 'project' | 'blog' | 'gallery' | 'post' | null;
     id: any;
     name: string;
   } | null>(null);
@@ -97,6 +98,8 @@ export default function AdminDashboard() {
   // Post form states
   const [postText, setPostText] = React.useState('');
   const [postVisibility, setPostVisibility] = React.useState('public');
+  const [postProjectId, setPostProjectId] = React.useState<string>('');
+  const [postPinned, setPostPinned] = React.useState(false);
 
   // Settings form states
   const [adminName, setAdminName] = React.useState('Abir Abdullah');
@@ -561,8 +564,20 @@ export default function AdminDashboard() {
   };
 
   const openAddPost = () => {
+    setEditingPost(null);
     setPostText('');
     setPostVisibility('public');
+    setPostProjectId('');
+    setPostPinned(false);
+    setIsPostModalOpen(true);
+  };
+
+  const openEditPost = (post: PortfolioPost) => {
+    setEditingPost(post);
+    setPostText(post.text || '');
+    setPostVisibility(post.visibility || 'public');
+    setPostProjectId(post.project_id ? String(post.project_id) : '');
+    setPostPinned(Boolean(post.pinned));
     setIsPostModalOpen(true);
   };
 
@@ -573,12 +588,14 @@ export default function AdminDashboard() {
       return;
     }
 
-    const newPost: PortfolioPost = {
-      id: Date.now(),
+    const isEditing = Boolean(editingPost);
+    const payload: PortfolioPost = {
+      id: editingPost ? editingPost.id : Date.now(),
       text: postText,
       visibility: postVisibility,
-      pinned: false,
-      created_at: new Date().toISOString(),
+      pinned: postPinned,
+      project_id: postProjectId ? postProjectId : null,
+      created_at: editingPost ? editingPost.created_at : new Date().toISOString(),
     };
 
     try {
@@ -586,22 +603,59 @@ export default function AdminDashboard() {
         const response = await fetch('/api/admin/crud', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'create', table: 'posts', payload: newPost }),
+          body: JSON.stringify(
+            isEditing
+              ? { action: 'update', table: 'posts', id: payload.id, payload }
+              : { action: 'create', table: 'posts', payload }
+          ),
         });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || 'Post save failed');
       }
 
-      const updatedPosts = [newPost, ...posts];
+      const updatedPosts = isEditing
+        ? posts.map((p) => (p.id === payload.id ? payload : p))
+        : [payload, ...posts];
+
       setPosts(updatedPosts);
       writeStoredCollection(portfolioStorageKeys.posts, updatedPosts);
       setIsPostModalOpen(false);
-      logActivity('Added a project update');
-      toast.success('Post added successfully');
+      setEditingPost(null);
+      logActivity(isEditing ? 'Updated a post' : 'Added a project update');
+      toast.success(isEditing ? 'Post updated successfully' : 'Post added successfully');
     } catch (err: any) {
       console.error('Post save failed:', err);
       toast.error(err.message || 'Unable to save post');
     }
+  };
+
+  const handleDeletePost = (id: any, text: string) => {
+    setDeleteConfirm({ type: 'post', id, name: text.slice(0, 40) });
+  };
+
+  const executeDeletePost = async (id: any, name: string) => {
+    const filtered = posts.filter((p) => p.id !== id);
+    setPosts(filtered);
+    writeStoredCollection(portfolioStorageKeys.posts, filtered);
+
+    if (dbStatus === 'connected') {
+      try {
+        const response = await fetch('/api/admin/crud', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'delete', table: 'posts', id }),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Delete failed');
+        toast.success('Post deleted from database and local storage');
+      } catch (err: any) {
+        console.error('Post delete failed:', err);
+        toast.error(`Database delete failed: ${err.message || err}. Removed from local workspace only.`);
+      }
+    } else {
+      toast.success('Post deleted from local workspace');
+    }
+    logActivity(`Deleted post "${name}"`);
   };
 
   // Filters search query
@@ -923,7 +977,7 @@ export default function AdminDashboard() {
 
           {/* TAB 4: POSTS MANAGEMENT */}
           {currentTab === 'posts' && (
-            <PostsSection posts={posts} onAdd={openAddPost} />
+            <PostsSection posts={posts} projects={projects} onAdd={openAddPost} onEdit={openEditPost} onDelete={handleDeletePost} />
           )}
 
           {/* TAB 5: GALLERY MANAGEMENT */}
@@ -1262,6 +1316,65 @@ create policy "Allow all for admin writes" on gallery for all using (true) with 
         </div>
       )}
 
+      {/* MODAL OVERLAY 4: POST / PROJECT UPDATE MODAL */}
+      {isPostModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-background border border-border w-full max-w-md rounded-xl shadow-xl overflow-hidden animate-in fade-in-50 zoom-in-95 duration-200">
+            <div className="bg-muted/40 px-6 py-4 border-b flex justify-between items-center">
+              <h2 className="font-extrabold tracking-tight text-lg">{editingPost ? 'Edit Post' : 'Add Post'}</h2>
+              <Button size="icon" variant="ghost" onClick={() => { setIsPostModalOpen(false); setEditingPost(null); }} className="h-8 w-8 text-muted-foreground hover:text-foreground">✕</Button>
+            </div>
+            <form onSubmit={handleSavePost} className="p-6 space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase text-muted-foreground">Post Content</label>
+                <Textarea
+                  value={postText}
+                  onChange={(e) => setPostText(e.target.value)}
+                  placeholder="Share a quick update..."
+                  required
+                  rows={4}
+                  className="bg-muted/10"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase text-muted-foreground">Link to Project (optional)</label>
+                <select
+                  value={postProjectId}
+                  onChange={(e) => setPostProjectId(e.target.value)}
+                  className="w-full rounded-md border border-input bg-muted/10 px-3 py-2 text-sm"
+                >
+                  <option value="">— No project (standalone post) —</option>
+                  {projects.map((p) => (
+                    <option key={p.id} value={String(p.id)}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <div className="space-y-2 flex-1">
+                  <label className="text-xs font-bold uppercase text-muted-foreground">Visibility</label>
+                  <select
+                    value={postVisibility}
+                    onChange={(e) => setPostVisibility(e.target.value)}
+                    className="w-full rounded-md border border-input bg-muted/10 px-3 py-2 text-sm"
+                  >
+                    <option value="public">Public</option>
+                    <option value="private">Private</option>
+                  </select>
+                </div>
+                <label className="flex items-center gap-2 text-xs font-bold uppercase text-muted-foreground pt-6">
+                  <input type="checkbox" checked={postPinned} onChange={(e) => setPostPinned(e.target.checked)} className="h-4 w-4" />
+                  Pinned
+                </label>
+              </div>
+              <div className="flex justify-end gap-2 pt-4 border-t">
+                <Button type="button" variant="ghost" className="text-xs" onClick={() => { setIsPostModalOpen(false); setEditingPost(null); }}>Cancel</Button>
+                <Button type="submit" className="text-xs">{editingPost ? 'Update Post' : 'Add Post'}</Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* CUSTOM CONFIRMATION MODAL */}
       {deleteConfirm && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -1291,6 +1404,8 @@ create policy "Allow all for admin writes" on gallery for all using (true) with 
                       await executeDeleteBlog(id, name);
                     } else if (type === 'gallery') {
                       await executeDeleteGallery(id, name);
+                    } else if (type === 'post') {
+                      await executeDeletePost(id, name);
                     }
                   }}
                 >
