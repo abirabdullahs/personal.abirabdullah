@@ -86,11 +86,7 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="rounded-lg border bg-muted/50 p-3 text-xs text-muted-foreground space-y-1">
-            <p className="font-semibold text-foreground">Demo Credentials:</p>
-            <p>Email: <code className="bg-background px-1 py-0.5 rounded text-primary">personal.abirabdullah@gmail.com</code></p>
-            <p>Password: <code className="bg-background px-1 py-0.5 rounded text-primary">abir123456</code></p>
-          </div>
+         
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
