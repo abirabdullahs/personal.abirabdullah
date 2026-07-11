@@ -8,5 +8,20 @@ export type EducationEntry = {
   description?: string;
 };
 
-// Add your real education history here.
-export const education: EducationEntry[] = [];
+export const education: EducationEntry[] = [
+  {
+    institution: "Bangladesh University of Engineering and Technology (BUET)",
+    degree: "Bachelor of Science (B.Sc.)",
+    department: "Computer Science and Engineering (CSE)",
+    start_year: 2025,
+    end_year: "Present",
+    
+  },
+  {
+    institution: "Tamirul Millat Kamil Madrasah",
+    degree: "Higher Secondary Certificate (HSC)",
+    department: "Science",
+    start_year: 2022,
+    end_year: 2024,
+  },
+];

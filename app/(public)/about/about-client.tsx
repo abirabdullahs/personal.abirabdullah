@@ -50,7 +50,7 @@ function AboutPageClient() {
       </section>
 
       {/* Experience */}
-      <section>
+      {/* <section>
         <h2 className="text-3xl font-bold tracking-tight mb-8 text-primary">Experience</h2>
         <div className="space-y-8">
           {experiences.length === 0 ? (
@@ -81,7 +81,7 @@ function AboutPageClient() {
             ))
           )}
         </div>
-      </section>
+      </section> */}
 
       {/* Education */}
       <section>

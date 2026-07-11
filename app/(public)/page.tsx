@@ -329,7 +329,7 @@ export default function HomePage() {
       </section>
 
       {/* Recent Experience (hardcoded, per architecture doc) */}
-      <section className="container px-4">
+      {/* <section className="container px-4">
         <h2 className="font-serif text-3xl tracking-tight mb-8 border-b border-border pb-4">Experience</h2>
         {experiences.length === 0 ? (
           <EmptyState title="No experience listed yet" message="Work history will show up here once it's added." />
@@ -351,7 +351,7 @@ export default function HomePage() {
             ))}
           </div>
         )}
-      </section>
+      </section> */}
     </div>
   );
 }
