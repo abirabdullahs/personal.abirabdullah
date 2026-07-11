@@ -144,7 +144,7 @@ export default function HomePage() {
 
               <p className="text-base md:text-lg text-muted-foreground max-w-xl leading-relaxed font-light">
                 {profile.bio ||
-                  'Second-year CSE student at BUET, passionate about web development and exploring AI/ML. I enjoy building modern, user-focused applications while continuously learning and experimenting with new technologies.'}
+                  'CSE student, passionate about web development and exploring AI/ML. I enjoy building modern, user-focused applications while continuously learning and experimenting with new technologies.'}
               </p>
 
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 pt-2">
