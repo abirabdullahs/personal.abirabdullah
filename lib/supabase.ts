@@ -28,9 +28,3 @@ export function getSupabaseAdmin(): SupabaseClient {
   }
   return supabaseAdminClient;
 }
-
-// For client-side components that might still need a direct export (with caution)
-// but better to use the getter.
-export const supabase = typeof window !== 'undefined' && process.env.NEXT_PUBLIC_SUPABASE_URL 
-  ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
-  : null as any;
