@@ -32,6 +32,7 @@ import { ProjectSection } from '@/components/admin/project-section';
 import { BlogSection } from '@/components/admin/blog-section';
 import { PostsSection } from '@/components/admin/posts-section';
 import { GallerySection } from '@/components/admin/gallery-section';
+import { ImageUploader } from '@/components/admin/image-uploader';
 import { toast } from "sonner";
 import { useRouter } from 'next/navigation';
 import { getSupabase } from '@/lib/supabase';
@@ -1374,8 +1375,8 @@ create policy "Allow all for admin writes" on gallery_albums for all using (true
                         <Textarea value={profileAbout} onChange={(e) => setProfileAbout(e.target.value)} rows={5} className="bg-background border-border" disabled={profileLoading} />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-muted-foreground uppercase">Avatar Image URL</label>
-                        <Input value={profileAvatar} onChange={(e) => setProfileAvatar(e.target.value)} className="bg-background border-border text-xs font-mono" disabled={profileLoading} />
+                        <label className="text-xs font-bold text-muted-foreground uppercase">Avatar Image</label>
+                        <ImageUploader value={profileAvatar} onChange={setProfileAvatar} folder="portfolio/profile" label="Avatar" />
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
@@ -1479,8 +1480,8 @@ create policy "Allow all for admin writes" on gallery_albums for all using (true
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase text-muted-foreground">Showcase Image URL</label>
-                <Input value={projImage} onChange={(e) => setProjImage(e.target.value)} className="bg-muted/10 text-xs font-mono" />
+                <label className="text-xs font-bold uppercase text-muted-foreground">Showcase Image</label>
+                <ImageUploader value={projImage} onChange={setProjImage} folder="portfolio/projects" label="Project image" />
               </div>
               <div className="flex justify-end gap-2 pt-4 border-t">
                 <Button type="button" variant="ghost" className="text-xs" onClick={() => setIsProjectModalOpen(false)}>Cancel</Button>
@@ -1572,8 +1573,8 @@ create policy "Allow all for admin writes" on gallery_albums for all using (true
                 <Input value={galName} onChange={(e) => setGalName(e.target.value)} placeholder="Landscape Setup" required className="bg-muted/10" />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase text-muted-foreground">Image Asset URL</label>
-                <Input value={galUrl} onChange={(e) => setGalUrl(e.target.value)} required className="bg-muted/10 text-xs font-mono" />
+                <label className="text-xs font-bold uppercase text-muted-foreground">Image</label>
+                <ImageUploader value={galUrl} onChange={setGalUrl} folder="portfolio/gallery" label="Gallery image" />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase text-muted-foreground">Album (optional)</label>
