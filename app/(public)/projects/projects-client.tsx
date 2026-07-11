@@ -6,12 +6,53 @@ import { Badge } from "@/components/ui/badge";
 import { ExternalLink, Github, Loader2, FolderGit2 } from "lucide-react";
 import Image from "next/image";
 import { getSupabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 import { EmptyState } from '@/components/empty-state';
 import { portfolioStorageKeys, readStoredCollection, type PortfolioProject } from '@/lib/portfolio-data';
+
+function ProjectDescription({ text }: { text?: string }) {
+  const [expanded, setExpanded] = React.useState(false);
+  const ref = React.useRef<HTMLParagraphElement>(null);
+  const [isClamped, setIsClamped] = React.useState(false);
+
+  React.useEffect(() => {
+    const el = ref.current;
+    if (el) {
+      setIsClamped(el.scrollHeight > el.clientHeight + 1);
+    }
+  }, [text]);
+
+  if (!text) return null;
+
+  return (
+    <div>
+      <p
+        ref={ref}
+        className={`text-sm md:text-base text-muted-foreground leading-relaxed ${expanded ? '' : 'line-clamp-2'}`}
+      >
+        {text}
+      </p>
+      {(isClamped || expanded) && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setExpanded((v) => !v);
+          }}
+          className="mt-1 font-mono text-[11px] uppercase tracking-wider text-primary hover:underline"
+        >
+          {expanded ? 'See less' : 'See more'}
+        </button>
+      )}
+    </div>
+  );
+}
 
 function ProjectsPageClient() {
   const [projects, setProjects] = React.useState<PortfolioProject[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [syncError, setSyncError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     const stored = readStoredCollection<PortfolioProject[]>(portfolioStorageKeys.projects, []);
@@ -31,15 +72,18 @@ function ProjectsPageClient() {
             .order('created_at', { ascending: false });
 
           if (error) throw error;
-          if (data && data.length > 0) {
-            setProjects(data as PortfolioProject[]);
-            localStorage.setItem(portfolioStorageKeys.projects, JSON.stringify(data));
-          }
-        } catch (err) {
-          console.warn('Background Supabase projects sync bypassed:', err);
+          setProjects((data as PortfolioProject[]) || []);
+          localStorage.setItem(portfolioStorageKeys.projects, JSON.stringify(data || []));
+          setSyncError(null);
+        } catch (err: any) {
+          console.error('Supabase projects sync failed:', err);
+          setSyncError(err?.message || 'Could not load the latest projects from the database.');
+          toast.error('Could not load latest projects — showing cached data if available.');
         }
       }
       syncSupabase();
+    } else {
+      setSyncError('Supabase is not configured (missing env vars) — showing cached data only.');
     }
   }, []);
 
@@ -124,9 +168,7 @@ function ProjectsPageClient() {
                   </div>
                 </div>
 
-                <p className="text-sm md:text-base text-muted-foreground leading-relaxed line-clamp-2">
-                  {project.short_description}
-                </p>
+                <ProjectDescription text={project.short_description} />
 
                 {Array.isArray(project.tech_stack) && project.tech_stack.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 pt-1">

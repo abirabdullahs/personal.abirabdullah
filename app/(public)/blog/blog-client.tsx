@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { getSupabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 import { portfolioStorageKeys, readStoredCollection, type PortfolioBlog } from '@/lib/portfolio-data';
 
 function BlogPageClient() {
@@ -28,12 +29,12 @@ function BlogPageClient() {
             .order('published_at', { ascending: false });
 
           if (error) throw error;
-          if (data && data.length > 0) {
-            setBlogs(data as PortfolioBlog[]);
-            localStorage.setItem(portfolioStorageKeys.blogs, JSON.stringify(data));
-          }
-        } catch (err) {
-          console.warn('Background Supabase blogs sync bypassed:', err);
+          const rows = (data as PortfolioBlog[]) || [];
+          setBlogs(rows);
+          localStorage.setItem(portfolioStorageKeys.blogs, JSON.stringify(rows));
+        } catch (err: any) {
+          console.error('Supabase blogs sync failed:', err);
+          toast.error('Could not load latest blog posts — showing cached data if available.');
         }
       }
       syncSupabase();

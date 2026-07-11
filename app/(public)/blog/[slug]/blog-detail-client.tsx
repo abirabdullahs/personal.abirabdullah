@@ -6,6 +6,7 @@ import { ArrowLeft, Clock, Calendar, Tag, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { getSupabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 import { MarkdownRenderer } from '@/components/markdown-renderer';
 
 function BlogPostPageClient({
@@ -64,8 +65,9 @@ function BlogPostPageClient({
               localStorage.setItem('portfolio_blogs', JSON.stringify(parsed));
             }
           }
-        } catch (err) {
-          console.warn("Background Supabase single blog fetch bypassed:", err);
+        } catch (err: any) {
+          console.error("Supabase single blog fetch failed:", err);
+          toast.error('Could not load the latest version of this post — showing cached data if available.');
         }
         setLoading(false);
       }

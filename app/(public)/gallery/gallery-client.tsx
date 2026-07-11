@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, ImageOff } from "lucide-react";
 import Image from "next/image";
 import { getSupabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 import { EmptyState } from '@/components/empty-state';
 import { portfolioStorageKeys, readStoredCollection, type PortfolioGalleryAlbum, type PortfolioGalleryItem } from '@/lib/portfolio-data';
 
@@ -32,18 +33,18 @@ function GalleryPageClient() {
           ]);
 
           if (imageError) throw imageError;
-          if (imageData && imageData.length > 0) {
-            setImages(imageData as PortfolioGalleryItem[]);
-            localStorage.setItem(portfolioStorageKeys.gallery, JSON.stringify(imageData));
-          }
+          const rows = (imageData as PortfolioGalleryItem[]) || [];
+          setImages(rows);
+          localStorage.setItem(portfolioStorageKeys.gallery, JSON.stringify(rows));
 
           // gallery_albums may not exist yet on older setups — fail quietly, flat grid still works.
           if (!albumError && albumData) {
             setAlbums(albumData as PortfolioGalleryAlbum[]);
             localStorage.setItem(portfolioStorageKeys.galleryAlbums, JSON.stringify(albumData));
           }
-        } catch (err) {
-          console.warn('Background Supabase gallery sync bypassed:', err);
+        } catch (err: any) {
+          console.error('Supabase gallery sync failed:', err);
+          toast.error('Could not load the latest gallery images — showing cached data if available.');
         }
       }
       syncSupabase();

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Pin, MessageSquareText } from "lucide-react";
 import { getSupabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 import { EmptyState } from '@/components/empty-state';
 import { portfolioStorageKeys, readStoredCollection, type PortfolioPost, type PortfolioProject } from '@/lib/portfolio-data';
 
@@ -41,8 +42,9 @@ function PostsPageClient() {
           if (projectsData) {
             setProjects((prev) => (projectsData.length > 0 ? (projectsData as PortfolioProject[]) : prev));
           }
-        } catch (err) {
-          console.warn('Background Supabase posts sync bypassed:', err);
+        } catch (err: any) {
+          console.error('Supabase posts sync failed:', err);
+          toast.error('Could not load the latest posts — showing cached data if available.');
         }
       }
       syncSupabase();

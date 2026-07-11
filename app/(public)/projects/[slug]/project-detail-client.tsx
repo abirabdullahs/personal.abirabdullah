@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ExternalLink, Github, Loader2 } from 'lucide-react';
 import { getSupabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 import { portfolioStorageKeys, readStoredCollection, type PortfolioPost, type PortfolioProject } from '@/lib/portfolio-data';
 import { technologies } from '@/data/technologies';
 
@@ -84,8 +85,9 @@ function ProjectDetailPageClient() {
 
         if (imagesData) setImages(imagesData as ProjectImage[]);
         if (postsData) setUpdates(postsData as PortfolioPost[]);
-      } catch (err) {
-        console.warn('Failed to load project detail:', err);
+      } catch (err: any) {
+        console.error('Failed to load project detail:', err);
+        toast.error('Could not load this project from the database.');
         if (!cachedMatch) setNotFound(true);
       } finally {
         setLoading(false);

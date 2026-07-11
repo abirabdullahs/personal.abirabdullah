@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { skills } from '@/data/skills';
 import { experiences } from '@/data/experiences';
 import { EmptyState } from '@/components/empty-state';
+import { toast } from 'sonner';
 import { getSupabase } from '@/lib/supabase';
 import {
   portfolioStorageKeys,
@@ -79,8 +80,9 @@ export default function HomePage() {
           setLatestBlogs(pickLatestPublishedBlogs(blogsRes.data as PortfolioBlog[]));
           localStorage.setItem(portfolioStorageKeys.blogs, JSON.stringify(blogsRes.data));
         }
-      } catch (err) {
-        console.warn('Background Supabase home sync bypassed:', err);
+      } catch (err: any) {
+        console.error('Supabase home sync failed:', err);
+        toast.error('Could not load the latest content from the database — showing cached data if available.');
       }
     }
 
