@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -64,18 +65,22 @@ export default function ProjectsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {projects.map((project) => (
             <Card key={project.id} className="overflow-hidden group">
-              <div className="relative aspect-video overflow-hidden">
-                <Image
-                  src={project.image_url || '/placeholder.svg'}
-                  alt={project.name}
-                  fill
-                  className="object-cover transition-transform duration-300 group-hover:scale-105"
-                  referrerPolicy="no-referrer"
-                />
-              </div>
+              <Link href={`/projects/${project.slug}`}>
+                <div className="relative aspect-video overflow-hidden">
+                  <Image
+                    src={project.image_url || '/placeholder.svg'}
+                    alt={project.name}
+                    fill
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+              </Link>
               <CardHeader>
                 <div className="flex justify-between items-start">
-                  <CardTitle className="text-2xl">{project.name}</CardTitle>
+                  <Link href={`/projects/${project.slug}`} className="hover:underline">
+                    <CardTitle className="text-2xl">{project.name}</CardTitle>
+                  </Link>
                   <div className="flex gap-2">
                     <a href={project.github_repo} target="_blank" rel="noopener noreferrer">
                       <Button size="icon" variant="ghost">

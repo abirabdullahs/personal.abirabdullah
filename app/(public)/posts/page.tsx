@@ -96,7 +96,7 @@ export default function PostsPage() {
                       </Badge>
                     )}
                     {linkedProject && (
-                      <Link href="/projects">
+                      <Link href={`/projects/${linkedProject.slug}`}>
                         <Badge variant="outline" className="hover:bg-accent transition-colors">
                           part of {linkedProject.name}
                         </Badge>
