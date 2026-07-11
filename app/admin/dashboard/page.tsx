@@ -20,7 +20,8 @@ import {
   Clock,
   Calendar,
   AlertCircle,
-  Loader2
+  Loader2,
+  Menu
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ProjectSection } from '@/components/admin/project-section';
 import { BlogSection } from '@/components/admin/blog-section';
@@ -57,6 +59,7 @@ export default function AdminDashboard() {
   
   // Search and filters
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [isMobileNavOpen, setIsMobileNavOpen] = React.useState(false);
   
   // Modal controllers
   const [isProjectModalOpen, setIsProjectModalOpen] = React.useState(false);
@@ -959,110 +962,137 @@ export default function AdminDashboard() {
     g.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const goToTab = (tab: typeof currentTab) => {
+    setCurrentTab(tab);
+    setIsMobileNavOpen(false);
+  };
+
+  const sidebarNav = (
+    <>
+      <div className="p-6 flex items-center justify-between border-b border-border">
+        <div className="flex items-center gap-2">
+          <div className="h-6 w-6 rounded bg-primary flex items-center justify-center">
+            <div className="h-2 w-2 bg-primary-foreground rounded-full animate-pulse"></div>
+          </div>
+          <span className="font-semibold tracking-tight">Portfolio Admin</span>
+        </div>
+        <ThemeToggle />
+      </div>
+
+      <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Management</div>
+
+        <Button
+          variant="ghost"
+          onClick={() => goToTab('dashboard')}
+          className={`w-full justify-start gap-3 font-medium transition-colors ${currentTab === 'dashboard' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent/50'}`}
+        >
+          <LayoutDashboard className="w-4 h-4" />
+          Dashboard
+        </Button>
+
+        <Button
+          variant="ghost"
+          onClick={() => goToTab('projects')}
+          className={`w-full justify-start gap-3 font-medium transition-colors ${currentTab === 'projects' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent/50'}`}
+        >
+          <Briefcase className="w-4 h-4" />
+          Projects
+        </Button>
+
+        <Button
+          variant="ghost"
+          onClick={() => goToTab('blogs')}
+          className={`w-full justify-start gap-3 font-medium transition-colors ${currentTab === 'blogs' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent/50'}`}
+        >
+          <FileText className="w-4 h-4" />
+          Blog Posts
+        </Button>
+
+        <Button
+          variant="ghost"
+          onClick={() => goToTab('posts')}
+          className={`w-full justify-start gap-3 font-medium transition-colors ${currentTab === 'posts' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent/50'}`}
+        >
+          <FileText className="w-4 h-4" />
+          Posts
+        </Button>
+
+        <Button
+          variant="ghost"
+          onClick={() => goToTab('gallery')}
+          className={`w-full justify-start gap-3 font-medium transition-colors ${currentTab === 'gallery' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent/50'}`}
+        >
+          <ImageIcon className="w-4 h-4" />
+          Gallery
+        </Button>
+
+        <div className="pt-4 px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">System</div>
+
+        <Button
+          variant="ghost"
+          onClick={() => goToTab('database')}
+          className={`w-full justify-start gap-3 font-medium transition-colors ${currentTab === 'database' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent/50'}`}
+        >
+          <Database className="w-4 h-4" />
+          Database Configuration
+        </Button>
+
+        <Button
+          variant="ghost"
+          onClick={() => goToTab('settings')}
+          className={`w-full justify-start gap-3 font-medium transition-colors ${currentTab === 'settings' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent/50'}`}
+        >
+          <Settings className="w-4 h-4" />
+          Settings
+        </Button>
+      </nav>
+
+      <div className="p-4 border-t border-border flex items-center justify-between gap-2 bg-muted/20">
+        <div className="flex items-center gap-3 overflow-hidden">
+          <Avatar className="h-8 w-8 rounded-full border border-border shrink-0">
+            <AvatarImage src={`https://api.dicebear.com/7.x/bottts/svg?seed=${adminName}`} />
+            <AvatarFallback>AA</AvatarFallback>
+          </Avatar>
+          <div className="overflow-hidden">
+            <p className="text-xs font-semibold truncate">{adminName}</p>
+            <p className="text-[10px] text-muted-foreground truncate uppercase font-bold tracking-wider">Administrator</p>
+          </div>
+        </div>
+        <Button variant="ghost" size="icon" onClick={handleSignOut} title="Sign Out" className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-8 w-8">
+          <LogOut className="h-4 w-4" />
+        </Button>
+      </div>
+    </>
+  );
+
   return (
     <div className="flex h-screen bg-background text-foreground font-sans overflow-hidden">
-      {/* Sidebar */}
-      <aside className="w-64 border-r border-border bg-card flex flex-col shrink-0">
-        <div className="p-6 flex items-center justify-between border-b border-border">
-          <div className="flex items-center gap-2">
-            <div className="h-6 w-6 rounded bg-primary flex items-center justify-center">
-              <div className="h-2 w-2 bg-primary-foreground rounded-full animate-pulse"></div>
-            </div>
-            <span className="font-semibold tracking-tight">Portfolio Admin</span>
-          </div>
-          <ThemeToggle />
-        </div>
-        
-        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Management</div>
-          
-          <Button 
-            variant="ghost" 
-            onClick={() => setCurrentTab('dashboard')} 
-            className={`w-full justify-start gap-3 font-medium transition-colors ${currentTab === 'dashboard' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent/50'}`}
-          >
-            <LayoutDashboard className="w-4 h-4" />
-            Dashboard
-          </Button>
-          
-          <Button 
-            variant="ghost" 
-            onClick={() => setCurrentTab('projects')} 
-            className={`w-full justify-start gap-3 font-medium transition-colors ${currentTab === 'projects' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent/50'}`}
-          >
-            <Briefcase className="w-4 h-4" />
-            Projects
-          </Button>
-          
-          <Button 
-            variant="ghost" 
-            onClick={() => setCurrentTab('blogs')} 
-            className={`w-full justify-start gap-3 font-medium transition-colors ${currentTab === 'blogs' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent/50'}`}
-          >
-            <FileText className="w-4 h-4" />
-            Blog Posts
-          </Button>
-
-          <Button 
-            variant="ghost" 
-            onClick={() => setCurrentTab('posts')} 
-            className={`w-full justify-start gap-3 font-medium transition-colors ${currentTab === 'posts' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent/50'}`}
-          >
-            <FileText className="w-4 h-4" />
-            Posts
-          </Button>
-          
-          <Button 
-            variant="ghost" 
-            onClick={() => setCurrentTab('gallery')} 
-            className={`w-full justify-start gap-3 font-medium transition-colors ${currentTab === 'gallery' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent/50'}`}
-          >
-            <ImageIcon className="w-4 h-4" />
-            Gallery
-          </Button>
-          
-          <div className="pt-4 px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">System</div>
-          
-          <Button 
-            variant="ghost" 
-            onClick={() => setCurrentTab('database')} 
-            className={`w-full justify-start gap-3 font-medium transition-colors ${currentTab === 'database' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent/50'}`}
-          >
-            <Database className="w-4 h-4" />
-            Database Configuration
-          </Button>
-          
-          <Button 
-            variant="ghost" 
-            onClick={() => setCurrentTab('settings')} 
-            className={`w-full justify-start gap-3 font-medium transition-colors ${currentTab === 'settings' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent/50'}`}
-          >
-            <Settings className="w-4 h-4" />
-            Settings
-          </Button>
-        </nav>
-
-        <div className="p-4 border-t border-border flex items-center justify-between gap-2 bg-muted/20">
-          <div className="flex items-center gap-3 overflow-hidden">
-            <Avatar className="h-8 w-8 rounded-full border border-border shrink-0">
-              <AvatarImage src={`https://api.dicebear.com/7.x/bottts/svg?seed=${adminName}`} />
-              <AvatarFallback>AA</AvatarFallback>
-            </Avatar>
-            <div className="overflow-hidden">
-              <p className="text-xs font-semibold truncate">{adminName}</p>
-              <p className="text-[10px] text-muted-foreground truncate uppercase font-bold tracking-wider">Administrator</p>
-            </div>
-          </div>
-          <Button variant="ghost" size="icon" onClick={handleSignOut} title="Sign Out" className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-8 w-8">
-            <LogOut className="h-4 w-4" />
-          </Button>
-        </div>
+      {/* Sidebar (desktop) */}
+      <aside className="hidden lg:flex w-64 border-r border-border bg-card flex-col shrink-0">
+        {sidebarNav}
       </aside>
 
+      {/* Sidebar (mobile drawer) */}
+      <Sheet open={isMobileNavOpen} onOpenChange={setIsMobileNavOpen}>
+        <SheetContent side="left" className="w-72 p-0 flex flex-col bg-card">
+          {sidebarNav}
+        </SheetContent>
+      </Sheet>
+
       {/* Main Content */}
-      <main className="flex-1 flex flex-col bg-background overflow-hidden">
-        {/* Header */}
-        <header className="h-14 border-b border-border px-8 flex items-center justify-between bg-card shrink-0">
+      <main className="flex-1 flex flex-col bg-background overflow-hidden min-w-0">
+        {/* Mobile top bar */}
+        <div className="lg:hidden h-14 border-b border-border px-4 flex items-center justify-between bg-card shrink-0">
+          <Button variant="ghost" size="icon" onClick={() => setIsMobileNavOpen(true)}>
+            <Menu className="h-5 w-5" />
+          </Button>
+          <span className="font-semibold text-sm capitalize">{currentTab}</span>
+          <ThemeToggle />
+        </div>
+
+        {/* Header (desktop) */}
+        <header className="hidden lg:flex h-14 border-b border-border px-8 items-center justify-between bg-card shrink-0">
           <div className="flex items-center gap-2 text-sm">
             <span className="text-muted-foreground capitalize">Admin</span>
             <span className="text-muted-foreground/30">/</span>
@@ -1099,11 +1129,11 @@ export default function AdminDashboard() {
         </header>
 
         {/* Scrollable Page Content */}
-        <div className="p-8 flex-1 overflow-y-auto space-y-6">
+        <div className="p-4 md:p-8 flex-1 overflow-y-auto space-y-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-extrabold tracking-tight capitalize">{currentTab === 'settings' ? 'Settings' : currentTab}</h1>
-              <p className="text-muted-foreground mt-1">
+              <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight capitalize">{currentTab === 'settings' ? 'Settings' : currentTab}</h1>
+              <p className="text-muted-foreground mt-1 text-sm md:text-base">
                 {currentTab === 'dashboard' && 'Manage your personal portfolio, upload new project showcases, and write articles.'}
                 {currentTab === 'projects' && 'Add, update, and showcase your professional development and open-source projects.'}
                 {currentTab === 'blogs' && 'Create drafts and publish industry insight articles directly to your blog.'}
@@ -1113,14 +1143,43 @@ export default function AdminDashboard() {
                 {currentTab === 'settings' && 'Update your public profile information and change your login password.'}
               </p>
             </div>
-            
+
+            <div className="flex items-center gap-2 lg:hidden overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+              <a href="/" target="_blank" rel="noopener noreferrer" className="shrink-0">
+                <Button variant="outline" size="sm" className="text-xs font-medium hover:bg-accent gap-1.5">
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  View Live Site
+                </Button>
+              </a>
+              {currentTab === 'projects' && (
+                <Button size="sm" onClick={openAddProject} className="text-xs gap-1 shrink-0">
+                  <Plus className="h-3.5 w-3.5" /> Add Project
+                </Button>
+              )}
+              {currentTab === 'blogs' && (
+                <Button size="sm" onClick={openAddBlog} className="text-xs gap-1 shrink-0">
+                  <Plus className="h-3.5 w-3.5" /> Write Post
+                </Button>
+              )}
+              {currentTab === 'gallery' && (
+                <Button size="sm" onClick={openAddGallery} className="text-xs gap-1 shrink-0">
+                  <Plus className="h-3.5 w-3.5" /> Add Image
+                </Button>
+              )}
+              {currentTab === 'posts' && (
+                <Button size="sm" onClick={openAddPost} className="text-xs gap-1 shrink-0">
+                  <Plus className="h-3.5 w-3.5" /> Add Post
+                </Button>
+              )}
+            </div>
+
             {(currentTab === 'projects' || currentTab === 'blogs' || currentTab === 'posts' || currentTab === 'gallery' || currentTab === 'dashboard') && (
               <div className="relative shrink-0">
-                <Input 
-                  placeholder="Search item..." 
+                <Input
+                  placeholder="Search item..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8 w-64 text-sm focus-visible:ring-primary h-9 bg-card border-border" 
+                  className="pl-8 w-full md:w-64 text-sm focus-visible:ring-primary h-9 bg-card border-border"
                 />
                 <Search className="w-4 h-4 absolute left-2.5 top-2.5 text-muted-foreground" />
               </div>
@@ -1349,12 +1408,12 @@ export default function AdminDashboard() {
                       { table: 'gallery', columns: 'id (PK), name, url, album_id (FK -> gallery_albums), caption', count: gallery.length },
                       { table: 'gallery_albums', columns: 'id (PK), name, description, cover_image', count: galleryAlbums.length }
                     ].map((tbl) => (
-                      <div key={tbl.table} className="py-3 flex items-center justify-between text-sm">
+                      <div key={tbl.table} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm">
                         <div>
                           <p className="font-bold text-primary font-mono">{tbl.table}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">columns: {tbl.columns}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5 break-words">columns: {tbl.columns}</p>
                         </div>
-                        <Badge variant="secondary">{tbl.count} entries mapped</Badge>
+                        <Badge variant="secondary" className="shrink-0 w-fit">{tbl.count} entries mapped</Badge>
                       </div>
                     ))}
                   </div>
@@ -1473,7 +1532,7 @@ create policy "Allow all for admin writes" on gallery_albums for all using (true
                         <label className="text-xs font-bold text-muted-foreground uppercase">Avatar Image</label>
                         <ImageUploader value={profileAvatar} onChange={setProfileAvatar} folder="portfolio/profile" label="Avatar" />
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <label className="text-xs font-bold text-muted-foreground uppercase">Phone</label>
                           <Input value={profilePhone} onChange={(e) => setProfilePhone(e.target.value)} className="bg-background border-border" disabled={profileLoading} />
@@ -1546,7 +1605,7 @@ create policy "Allow all for admin writes" on gallery_albums for all using (true
               <Button size="icon" variant="ghost" onClick={() => setIsProjectModalOpen(false)} className="h-8 w-8 text-muted-foreground hover:text-foreground">✕</Button>
             </div>
             <form onSubmit={handleSaveProject} className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-xs font-bold uppercase text-muted-foreground">Project Name</label>
                   <Input value={projName} onChange={(e) => setProjName(e.target.value)} placeholder="E.g. Chat App" required className="bg-muted/10" />
@@ -1564,7 +1623,7 @@ create policy "Allow all for admin writes" on gallery_albums for all using (true
                 <label className="text-xs font-bold uppercase text-muted-foreground">Tech Stack (comma separated)</label>
                 <Input value={projTech} onChange={(e) => setProjTech(e.target.value)} placeholder="React, Express, Tailwind" className="bg-muted/10 text-sm" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-xs font-bold uppercase text-muted-foreground">GitHub Repo URL</label>
                   <Input value={projGithub} onChange={(e) => setProjGithub(e.target.value)} placeholder="https://github.com/..." className="bg-muted/10 text-xs" />
@@ -1668,7 +1727,7 @@ create policy "Allow all for admin writes" on gallery_albums for all using (true
 
       {/* MODAL OVERLAY 3: GALLERY UPLOAD MODAL */}
       {isGalleryModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-background border border-border w-full max-w-md rounded-xl shadow-xl overflow-hidden animate-in fade-in-50 zoom-in-95 duration-200">
             <div className="bg-muted/40 px-6 py-4 border-b flex justify-between items-center">
               <h2 className="font-extrabold tracking-tight text-lg">Add Gallery Image</h2>
@@ -1707,7 +1766,7 @@ create policy "Allow all for admin writes" on gallery_albums for all using (true
 
       {/* MODAL OVERLAY 4: POST / PROJECT UPDATE MODAL */}
       {isPostModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-background border border-border w-full max-w-md rounded-xl shadow-xl overflow-hidden animate-in fade-in-50 zoom-in-95 duration-200">
             <div className="bg-muted/40 px-6 py-4 border-b flex justify-between items-center">
               <h2 className="font-extrabold tracking-tight text-lg">{editingPost ? 'Edit Post' : 'Add Post'}</h2>
@@ -1766,7 +1825,7 @@ create policy "Allow all for admin writes" on gallery_albums for all using (true
 
       {/* CUSTOM CONFIRMATION MODAL */}
       {deleteConfirm && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-background border border-border w-full max-w-sm rounded-xl shadow-xl overflow-hidden animate-in fade-in-50 zoom-in-95 duration-200">
             <div className="p-6 space-y-4">
               <div className="flex items-center gap-3 text-destructive">
