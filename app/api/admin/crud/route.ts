@@ -31,7 +31,16 @@ export async function POST(request: Request) {
         return NextResponse.json({ success: true });
       }
       case 'list': {
-        const { data, error } = await client.from(tableName).select('*').order(body.orderBy || 'created_at', { ascending: false });
+        let query = client.from(tableName).select('*');
+        if (body.filters && typeof body.filters === 'object') {
+          for (const [key, val] of Object.entries(body.filters)) {
+            query = query.eq(key, val as any);
+          }
+        }
+        const orderColumn = body.orderBy || 'created_at';
+        const ascending = body.ascending ?? false;
+        query = query.order(orderColumn, { ascending });
+        const { data, error } = await query;
         if (error) throw error;
         return NextResponse.json({ success: true, data });
       }

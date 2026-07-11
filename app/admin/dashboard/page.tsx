@@ -19,7 +19,8 @@ import {
   RefreshCw,
   Clock,
   Calendar,
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ import { BlogSection } from '@/components/admin/blog-section';
 import { PostsSection } from '@/components/admin/posts-section';
 import { GallerySection } from '@/components/admin/gallery-section';
 import { ImageUploader } from '@/components/admin/image-uploader';
+import { ImageGalleryUploader, type GalleryImageItem } from '@/components/admin/image-gallery-uploader';
 import { MarkdownEditor } from '@/components/admin/markdown-editor';
 import { toast } from "sonner";
 import { useRouter } from 'next/navigation';
@@ -84,6 +86,9 @@ export default function AdminDashboard() {
   const [projGithub, setProjGithub] = React.useState('');
   const [projLive, setProjLive] = React.useState('');
   const [projImage, setProjImage] = React.useState('');
+  const [projGalleryImages, setProjGalleryImages] = React.useState<GalleryImageItem[]>([]);
+  const [originalProjGalleryImages, setOriginalProjGalleryImages] = React.useState<GalleryImageItem[]>([]);
+  const [projGalleryLoading, setProjGalleryLoading] = React.useState(false);
 
   // Blog form states
   const [blogTitle, setBlogTitle] = React.useState('');
@@ -273,10 +278,12 @@ export default function AdminDashboard() {
     setProjGithub('');
     setProjLive('');
     setProjImage('');
+    setProjGalleryImages([]);
+    setOriginalProjGalleryImages([]);
     setIsProjectModalOpen(true);
   };
 
-  const openEditProject = (proj: any) => {
+  const openEditProject = async (proj: any) => {
     setEditingProject(proj);
     setProjName(proj.name);
     setProjSlug(proj.slug);
@@ -285,7 +292,40 @@ export default function AdminDashboard() {
     setProjGithub(proj.github_repo || '');
     setProjLive(proj.live_link || '');
     setProjImage(proj.image_url || '');
+    setProjGalleryImages([]);
+    setOriginalProjGalleryImages([]);
     setIsProjectModalOpen(true);
+
+    if (dbStatus === 'connected') {
+      setProjGalleryLoading(true);
+      try {
+        const response = await fetch('/api/admin/crud', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'list',
+            table: 'project_images',
+            filters: { project_id: proj.id },
+            orderBy: 'display_order',
+            ascending: true,
+          }),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Unable to load gallery images');
+        const loaded: GalleryImageItem[] = (result.data || []).map((row: any) => ({
+          id: row.id,
+          image_url: row.image_url,
+          alt_text: row.alt_text || '',
+        }));
+        setProjGalleryImages(loaded);
+        setOriginalProjGalleryImages(loaded);
+      } catch (err: any) {
+        console.error('Failed to load project gallery images:', err);
+        toast.error(err.message || 'Unable to load gallery images for this project');
+      } finally {
+        setProjGalleryLoading(false);
+      }
+    }
   };
 
   const handleSaveProject = async (e: React.FormEvent) => {
@@ -298,17 +338,15 @@ export default function AdminDashboard() {
     const techArray = projTech.split(',').map(t => t.trim()).filter(Boolean);
 
     let updatedProjects;
-    const targetId = editingProject ? editingProject.id : Date.now();
-    const projectObj = {
-      id: targetId,
+    let targetId = editingProject ? editingProject.id : Date.now();
+    const basePayload = {
       name: projName,
       slug: projSlug,
       short_description: projDesc,
       tech_stack: techArray,
       github_repo: projGithub || '#',
       live_link: projLive || '#',
-      image_url: projImage || '',
-      created_at: editingProject ? editingProject.created_at : new Date().toISOString()
+      image_url: projImage || ''
     };
 
     try {
@@ -320,20 +358,61 @@ export default function AdminDashboard() {
             action: editingProject ? 'update' : 'create',
             table: 'projects',
             id: editingProject ? editingProject.id : undefined,
-            payload: {
-              name: projName,
-              slug: projSlug,
-              short_description: projDesc,
-              tech_stack: techArray,
-              github_repo: projGithub || '#',
-              live_link: projLive || '#',
-              image_url: projImage || ''
-            },
+            payload: basePayload,
           }),
         });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || 'Project save failed');
+        // Use the real DB-assigned id (critical for project_images.project_id to point
+        // at the correct row — a client-generated Date.now() id would never match).
+        if (result.data?.id !== undefined) {
+          targetId = result.data.id;
+        }
+
+        // Reconcile the project_images gallery against what was originally loaded.
+        const removedImages = originalProjGalleryImages.filter(
+          (orig) => orig.id !== undefined && !projGalleryImages.some((img) => img.id === orig.id)
+        );
+        for (const removed of removedImages) {
+          await fetch('/api/admin/crud', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'delete', table: 'project_images', id: removed.id }),
+          }).catch((err) => console.error('Failed to delete removed project image:', err));
+        }
+
+        for (let i = 0; i < projGalleryImages.length; i++) {
+          const img = projGalleryImages[i];
+          if (img.id === undefined) {
+            await fetch('/api/admin/crud', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'create',
+                table: 'project_images',
+                payload: { project_id: targetId, image_url: img.image_url, alt_text: img.alt_text || '', display_order: i },
+              }),
+            }).catch((err) => console.error('Failed to add project image:', err));
+          } else {
+            await fetch('/api/admin/crud', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'update',
+                table: 'project_images',
+                id: img.id,
+                payload: { image_url: img.image_url, alt_text: img.alt_text || '', display_order: i },
+              }),
+            }).catch((err) => console.error('Failed to update project image:', err));
+          }
+        }
       }
+
+      const projectObj = {
+        id: targetId,
+        ...basePayload,
+        created_at: editingProject ? editingProject.created_at : new Date().toISOString()
+      };
 
       if (editingProject) {
         updatedProjects = projects.map(p => p.id === editingProject.id ? projectObj : p);
@@ -1484,6 +1563,20 @@ create policy "Allow all for admin writes" on gallery_albums for all using (true
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase text-muted-foreground">Showcase Image</label>
                 <ImageUploader value={projImage} onChange={setProjImage} folder="portfolio/projects" label="Project image" />
+              </div>
+              <div className="space-y-2 border-t pt-4">
+                {projGalleryLoading ? (
+                  <p className="text-xs text-muted-foreground flex items-center gap-2">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading gallery images...
+                  </p>
+                ) : (
+                  <ImageGalleryUploader
+                    images={projGalleryImages}
+                    onChange={setProjGalleryImages}
+                    folder="portfolio/projects"
+                    label="Project Gallery (shown on project detail page)"
+                  />
+                )}
               </div>
               <div className="flex justify-end gap-2 pt-4 border-t">
                 <Button type="button" variant="ghost" className="text-xs" onClick={() => setIsProjectModalOpen(false)}>Cancel</Button>
