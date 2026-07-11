@@ -106,7 +106,7 @@ function AboutPageClient() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground leading-relaxed">{edu.description}</p>
-                <p className="mt-4 font-bold text-primary">CGPA: {edu.cgpa}</p>
+                {/* <p className="mt-4 font-bold text-primary">CGPA: {edu.cgpa}</p> */}
               </CardContent>
             </Card>
             ))
