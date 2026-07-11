@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
-import { getSupabaseAdmin, getSupabase } from '@/lib/supabase';
+import bcrypt from 'bcrypt';
+import { getSupabaseAdmin } from '@/lib/supabase';
+import { signAdminToken, ADMIN_COOKIE_NAME } from '@/lib/auth';
 
 export async function POST(request: Request) {
   try {
@@ -20,11 +22,18 @@ export async function POST(request: Request) {
 
     if (error) throw error;
 
-    if (!data || data.password !== password) {
+    if (!data) {
       return NextResponse.json({ error: 'Invalid credentials.' }, { status: 401 });
     }
 
-    return NextResponse.json({
+    const passwordMatches = await bcrypt.compare(password, data.password);
+    if (!passwordMatches) {
+      return NextResponse.json({ error: 'Invalid credentials.' }, { status: 401 });
+    }
+
+    const token = signAdminToken({ id: data.id, email: data.email, name: data.name });
+
+    const response = NextResponse.json({
       success: true,
       admin: {
         id: data.id,
@@ -32,6 +41,16 @@ export async function POST(request: Request) {
         name: data.name,
       },
     });
+
+    response.cookies.set(ADMIN_COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+    });
+
+    return response;
   } catch (error: any) {
     console.error('Admin login failed:', error);
     return NextResponse.json({ error: error?.message || 'Unable to verify admin credentials.' }, { status: 500 });
