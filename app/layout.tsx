@@ -16,9 +16,30 @@ const jetbrainsMono = JetBrains_Mono({
   variable: '--font-jetbrains-mono',
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://personal-abirabdullah.vercel.app';
+
 export const metadata: Metadata = {
-  title: 'Personal Portfolio',
-  description: 'A professional full-stack portfolio website.',
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: 'Abir Abdullah — Full-Stack Developer',
+    template: '%s | Abir Abdullah',
+  },
+  description: 'Personal portfolio of Abir Abdullah — full-stack developer specializing in high-performance web applications. Projects, blog posts, and updates.',
+  openGraph: {
+    type: 'website',
+    siteName: 'Abir Abdullah',
+    title: 'Abir Abdullah — Full-Stack Developer',
+    description: 'Personal portfolio of Abir Abdullah — full-stack developer specializing in high-performance web applications.',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Abir Abdullah — Full-Stack Developer',
+    description: 'Personal portfolio of Abir Abdullah — full-stack developer specializing in high-performance web applications.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({children}: {children: React.ReactNode}) {
