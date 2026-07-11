@@ -1,4 +1,7 @@
 import Link from 'next/link';
+import { Github, Linkedin, Mail } from 'lucide-react';
+import { contactInfo } from '@/data/contact';
+import { WhatsappIcon } from '@/components/whatsapp-icon';
 
 const footerLinks = [
   { name: 'Projects', href: '/projects' },
@@ -6,6 +9,14 @@ const footerLinks = [
   { name: 'Posts', href: '/posts' },
   { name: 'Gallery', href: '/gallery' },
   { name: 'About', href: '/about' },
+  { name: 'Contact', href: '/contact' },
+];
+
+const socialLinks = [
+  { name: 'Email', href: `mailto:${contactInfo.email}`, icon: Mail },
+  { name: 'WhatsApp', href: `https://wa.me/${contactInfo.whatsapp.number}`, icon: WhatsappIcon },
+  { name: 'GitHub', href: contactInfo.github.url, icon: Github },
+  { name: 'LinkedIn', href: contactInfo.linkedin.url, icon: Linkedin },
 ];
 
 export function Footer() {
@@ -32,6 +43,22 @@ export function Footer() {
               </Link>
             ))}
           </nav>
+        </div>
+
+        <div className="flex gap-4">
+          {socialLinks.map((social) => (
+            <a
+              key={social.name}
+              href={social.href}
+              target={social.href.startsWith('mailto:') ? undefined : '_blank'}
+              rel={social.href.startsWith('mailto:') ? undefined : 'noopener noreferrer'}
+              aria-label={social.name}
+              title={social.name}
+              className="text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <social.icon className="h-5 w-5" />
+            </a>
+          ))}
         </div>
 
         <div className="border-t border-border pt-6 flex flex-col md:flex-row items-center justify-between gap-2 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
