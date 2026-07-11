@@ -4,7 +4,6 @@ import * as React from 'react';
 import { education } from "@/data/education";
 import { skills } from "@/data/skills";
 import { experiences } from "@/data/experiences";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/empty-state";
 import { getSupabase } from '@/lib/supabase';
@@ -54,19 +53,20 @@ function AboutPageClient() {
   }, []);
 
   return (
-    <div className="container px-4 py-16 space-y-24">
+    <div className="container px-4 py-12 md:py-16 space-y-16 md:space-y-20">
       {/* Intro */}
-      <section className="max-w-3xl">
-        <h1 className="text-4xl font-bold tracking-tight mb-6">About Me</h1>
-        <p className="text-lg text-muted-foreground leading-relaxed whitespace-pre-wrap">
+      <section className="max-w-3xl border-b border-border pb-10 md:pb-12">
+        <p className="font-mono text-xs uppercase tracking-[0.15em] text-muted-foreground mb-3">— The Long Version</p>
+        <h1 className="font-serif text-4xl md:text-5xl tracking-tight mb-6">About Me</h1>
+        <p className="text-base md:text-lg text-muted-foreground leading-relaxed whitespace-pre-wrap">
           {profile.about || profile.bio || FALLBACK_ABOUT}
         </p>
       </section>
 
       {/* Experience */}
       {/* <section>
-        <h2 className="text-3xl font-bold tracking-tight mb-8 text-primary">Experience</h2>
-        <div className="space-y-8">
+        <h2 className="font-serif text-3xl tracking-tight mb-8">Experience</h2>
+        <div className="divide-y divide-border">
           {experiences.length === 0 ? (
             <EmptyState
               title="No experience listed yet"
@@ -74,24 +74,20 @@ function AboutPageClient() {
             />
           ) : (
             experiences.map((exp) => (
-            <Card key={exp.company_name}>
-              <CardHeader>
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
-                  <div>
-                    <CardTitle className="text-2xl">{exp.position}</CardTitle>
-                    <CardDescription className="text-lg font-medium text-primary/80">{exp.company_name}</CardDescription>
-                  </div>
-                  <Badge variant="outline" className="w-fit">{formatDateRange(exp.start_date, exp.end_date)}</Badge>
+            <div key={exp.company_name} className="py-8 first:pt-0">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-3">
+                <div>
+                  <h3 className="font-serif text-2xl">{exp.position}</h3>
+                  <p className="text-base font-medium text-primary mt-0.5">{exp.company_name}</p>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground leading-relaxed">{exp.description}</p>
-                <div className="flex gap-4 mt-4">
-                  <Badge variant="secondary">{exp.work_mode}</Badge>
-                  <Badge variant="secondary">{exp.employment_type}</Badge>
-                </div>
-              </CardContent>
-            </Card>
+                <Badge variant="outline" className="w-fit rounded-none font-mono text-[11px]">{formatDateRange(exp.start_date, exp.end_date)}</Badge>
+              </div>
+              <p className="text-muted-foreground leading-relaxed">{exp.description}</p>
+              <div className="flex gap-2 mt-4">
+                <Badge variant="secondary" className="rounded-none">{exp.work_mode}</Badge>
+                <Badge variant="secondary" className="rounded-none">{exp.employment_type}</Badge>
+              </div>
+            </div>
             ))
           )}
         </div>
@@ -99,8 +95,8 @@ function AboutPageClient() {
 
       {/* Education */}
       <section>
-        <h2 className="text-3xl font-bold tracking-tight mb-8 text-primary">Education</h2>
-        <div className="space-y-8">
+        <h2 className="font-serif text-3xl tracking-tight mb-8">Education</h2>
+        <div className="divide-y divide-border">
           {education.length === 0 ? (
             <EmptyState
               title="No education listed yet"
@@ -108,21 +104,17 @@ function AboutPageClient() {
             />
           ) : (
             education.map((edu) => (
-            <Card key={edu.institution}>
-              <CardHeader>
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
-                  <div>
-                    <CardTitle className="text-2xl">{edu.degree}</CardTitle>
-                    <CardDescription className="text-lg font-medium text-primary/80">{edu.institution} • {edu.department}</CardDescription>
-                  </div>
-                  <Badge variant="outline" className="w-fit">{edu.start_year} - {edu.end_year}</Badge>
+            <div key={edu.institution} className="py-8 first:pt-0">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-3">
+                <div>
+                  <h3 className="font-serif text-2xl">{edu.degree}</h3>
+                  <p className="text-base font-medium text-primary mt-0.5">{edu.institution} • {edu.department}</p>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground leading-relaxed">{edu.description}</p>
-                {/* <p className="mt-4 font-bold text-primary">CGPA: {edu.cgpa}</p> */}
-              </CardContent>
-            </Card>
+                <Badge variant="outline" className="w-fit rounded-none font-mono text-[11px]">{edu.start_year} - {edu.end_year}</Badge>
+              </div>
+              <p className="text-muted-foreground leading-relaxed">{edu.description}</p>
+              {/* <p className="mt-4 font-bold text-primary">CGPA: {edu.cgpa}</p> */}
+            </div>
             ))
           )}
         </div>
@@ -130,23 +122,21 @@ function AboutPageClient() {
 
       {/* Full Skills List */}
       <section>
-        <h2 className="text-3xl font-bold tracking-tight mb-8 text-primary">Skills</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <h2 className="font-serif text-3xl tracking-tight mb-8">Skills</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-8 border-t border-border pt-8">
           {categories.map((category) => (
-            <Card key={category}>
-              <CardHeader>
-                <CardTitle>{category}</CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-wrap gap-2">
+            <div key={category}>
+              <p className="font-mono text-xs uppercase tracking-[0.15em] text-muted-foreground mb-3">{category}</p>
+              <div className="flex flex-wrap gap-2">
                 {skills
                   .filter((s) => s.category === category)
                   .map((skill) => (
-                    <Badge key={skill.name} variant="secondary">
+                    <Badge key={skill.name} variant="secondary" className="rounded-none">
                       {skill.name}
                     </Badge>
                   ))}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ))}
         </div>
       </section>

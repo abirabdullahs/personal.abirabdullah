@@ -89,7 +89,7 @@ function BlogPostPageClient({
   if (!blog) {
     return (
       <div className="container py-20 text-center space-y-4">
-        <h1 className="text-3xl font-bold">Post Not Found</h1>
+        <h1 className="font-serif text-3xl">Post Not Found</h1>
         <p className="text-muted-foreground">The blog post you are looking for does not exist or has been removed.</p>
         <Link href="/blog">
           <Button variant="outline">
@@ -101,7 +101,7 @@ function BlogPostPageClient({
   }
 
   return (
-    <article className="container max-w-[42rem] px-4 py-16 space-y-10">
+    <article className="container max-w-[42rem] px-4 py-12 md:py-16 space-y-10">
       <div className="space-y-6">
         <Link href="/blog">
           <Button variant="ghost" size="sm" className="-ml-3 text-muted-foreground hover:text-foreground">
@@ -121,7 +121,7 @@ function BlogPostPageClient({
           )}
         </div>
 
-        <h1 className="text-4xl md:text-5xl leading-tight">
+        <h1 className="font-serif text-3xl md:text-5xl leading-tight">
           {blog.title}
         </h1>
 

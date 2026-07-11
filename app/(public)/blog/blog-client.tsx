@@ -43,11 +43,11 @@ function BlogPageClient() {
   const total = blogs.length;
 
   return (
-    <div className="container px-4 py-16">
+    <div className="container px-4 py-12 md:py-16">
       <div className="max-w-[42rem] mx-auto">
         <div className="mb-12 border-b border-border pb-6">
           <p className="font-mono text-xs uppercase tracking-[0.15em] text-muted-foreground mb-3">— The Journal</p>
-          <h1 className="text-5xl mb-4">Blog</h1>
+          <h1 className="font-serif text-4xl md:text-5xl tracking-tight mb-4">Blog</h1>
           <p className="text-lg text-muted-foreground">
             Notes, tutorials, and field reports from building software.
           </p>
@@ -76,7 +76,7 @@ function BlogPageClient() {
                     </>
                   )}
                 </div>
-                <h2 className="text-3xl mb-2 transition-colors group-hover:text-primary">{blog.title}</h2>
+                <h2 className="font-serif text-2xl md:text-3xl mb-2 transition-colors group-hover:text-primary">{blog.title}</h2>
                 <p className="text-muted-foreground leading-relaxed line-clamp-2 mb-3">{blog.excerpt}</p>
                 <div className="flex items-center justify-between">
                   <div className="flex flex-wrap gap-1.5">

@@ -1,11 +1,11 @@
 'use client';
 
 import * as React from 'react';
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2 } from "lucide-react";
+import { Loader2, ImageOff } from "lucide-react";
 import Image from "next/image";
 import { getSupabase } from '@/lib/supabase';
+import { EmptyState } from '@/components/empty-state';
 import { portfolioStorageKeys, readStoredCollection, type PortfolioGalleryAlbum, type PortfolioGalleryItem } from '@/lib/portfolio-data';
 
 function GalleryPageClient() {
@@ -57,10 +57,11 @@ function GalleryPageClient() {
   const countInAlbum = (albumId: number | string) => images.filter((img) => String(img.album_id ?? '') === String(albumId)).length;
 
   return (
-    <div className="container px-4 py-16 space-y-8">
-      <div className="max-w-2xl">
-        <h1 className="text-4xl font-bold tracking-tight mb-4">Gallery</h1>
-        <p className="text-lg text-muted-foreground">
+    <div className="container px-4 py-12 md:py-16 space-y-8">
+      <div className="max-w-2xl border-b border-border pb-6">
+        <p className="font-mono text-xs uppercase tracking-[0.15em] text-muted-foreground mb-3">— Field Notes</p>
+        <h1 className="font-serif text-4xl md:text-5xl tracking-tight mb-4">Gallery</h1>
+        <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
           A visual collection of moments, workspace setups, and event highlights.
         </p>
       </div>
@@ -69,7 +70,7 @@ function GalleryPageClient() {
         <div className="flex flex-wrap gap-2">
           <Badge
             variant={activeAlbum === 'all' ? 'default' : 'outline'}
-            className="cursor-pointer"
+            className="cursor-pointer rounded-none font-mono text-[11px] uppercase tracking-wider"
             onClick={() => setActiveAlbum('all')}
           >
             All ({images.length})
@@ -78,7 +79,7 @@ function GalleryPageClient() {
             <Badge
               key={album.id}
               variant={activeAlbum === album.id ? 'default' : 'outline'}
-              className="cursor-pointer"
+              className="cursor-pointer rounded-none font-mono text-[11px] uppercase tracking-wider"
               onClick={() => setActiveAlbum(album.id)}
             >
               {album.name} ({countInAlbum(album.id)})
@@ -92,28 +93,30 @@ function GalleryPageClient() {
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       ) : visibleImages.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-10 text-center text-muted-foreground">
-          {images.length === 0
-            ? 'The gallery is empty right now. Add images from the admin dashboard to populate this page.'
-            : 'No images in this album yet.'}
-        </div>
+        <EmptyState
+          icon={ImageOff}
+          title={images.length === 0 ? 'Gallery is empty' : 'No images in this album'}
+          message={
+            images.length === 0
+              ? 'Add images from the admin dashboard to populate this page.'
+              : 'Try a different album, or check back soon.'
+          }
+        />
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3">
           {visibleImages.map((image) => (
-            <Card key={image.id} className="overflow-hidden group cursor-pointer border border-border bg-card">
-              <CardContent className="p-0 aspect-square relative">
-                <Image
-                  src={image.url}
-                  alt={image.name}
-                  fill
-                  className="object-cover transition-transform duration-300 group-hover:scale-110"
-                  referrerPolicy="no-referrer"
-                />
-                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <span className="text-white font-medium px-4 text-center">{image.name}</span>
-                </div>
-              </CardContent>
-            </Card>
+            <div key={image.id} className="group relative aspect-square overflow-hidden border border-border bg-muted cursor-pointer">
+              <Image
+                src={image.url}
+                alt={image.name}
+                fill
+                className="object-cover transition-transform duration-500 group-hover:scale-110"
+                referrerPolicy="no-referrer"
+              />
+              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
+                <span className="text-white text-sm font-medium">{image.name}</span>
+              </div>
+            </div>
           ))}
         </div>
       )}

@@ -2,10 +2,10 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Pin } from "lucide-react";
+import { Loader2, Pin, MessageSquareText } from "lucide-react";
 import { getSupabase } from '@/lib/supabase';
+import { EmptyState } from '@/components/empty-state';
 import { portfolioStorageKeys, readStoredCollection, type PortfolioPost, type PortfolioProject } from '@/lib/portfolio-data';
 
 function PostsPageClient() {
@@ -63,53 +63,54 @@ function PostsPageClient() {
   };
 
   return (
-    <div className="container px-4 py-16 space-y-12">
-      <div className="max-w-2xl">
-        <h1 className="text-4xl font-bold tracking-tight mb-4">Posts &amp; Updates</h1>
-        <p className="text-lg text-muted-foreground">
-          Short updates, thoughts, and progress notes — including behind-the-scenes updates on my projects.
-        </p>
-      </div>
+    <div className="container px-4 py-12 md:py-16">
+      <div className="max-w-[42rem] mx-auto">
+        <div className="mb-10 md:mb-12 border-b border-border pb-6">
+          <p className="font-mono text-xs uppercase tracking-[0.15em] text-muted-foreground mb-3">— The Log</p>
+          <h1 className="font-serif text-4xl md:text-5xl tracking-tight mb-4">Posts &amp; Updates</h1>
+          <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
+            Short updates, thoughts, and progress notes — including behind-the-scenes updates on my projects.
+          </p>
+        </div>
 
-      {loading ? (
-        <div className="flex justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      ) : sortedPosts.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-10 text-center text-muted-foreground">
-          No posts yet. Check back soon.
-        </div>
-      ) : (
-        <div className="max-w-2xl space-y-4">
-          {sortedPosts.map((post) => {
-            const linkedProject = findProject(post.project_id);
-            return (
-              <Card key={post.id} className="shadow-none">
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-2 flex-wrap mb-2">
-                    <p className="text-sm text-muted-foreground">
-                      {post.created_at ? new Date(post.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : ''}
-                    </p>
+        {loading ? (
+          <div className="flex justify-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : sortedPosts.length === 0 ? (
+          <EmptyState icon={MessageSquareText} title="No posts yet" message="Check back soon for updates." />
+        ) : (
+          <div className="divide-y divide-border">
+            {sortedPosts.map((post) => {
+              const linkedProject = findProject(post.project_id);
+              return (
+                <div key={post.id} className="py-6 first:pt-0">
+                  <div className="flex items-center gap-2 flex-wrap mb-2 font-mono text-xs uppercase tracking-wider text-muted-foreground">
+                    <span>
+                      {post.created_at
+                        ? new Date(post.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
+                        : ''}
+                    </span>
                     {post.pinned && (
-                      <Badge variant="default" className="gap-1">
+                      <Badge variant="default" className="gap-1 rounded-none font-sans normal-case">
                         <Pin className="h-3 w-3" /> Pinned
                       </Badge>
                     )}
                     {linkedProject && (
                       <Link href={`/projects/${linkedProject.slug}`}>
-                        <Badge variant="outline" className="hover:bg-accent transition-colors">
+                        <Badge variant="outline" className="rounded-none font-sans normal-case hover:bg-accent transition-colors">
                           part of {linkedProject.name}
                         </Badge>
                       </Link>
                     )}
                   </div>
-                  <p className="whitespace-pre-wrap leading-relaxed">{post.text}</p>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+                  <p className="whitespace-pre-wrap leading-relaxed text-base">{post.text}</p>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
