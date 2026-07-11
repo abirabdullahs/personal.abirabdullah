@@ -86,56 +86,69 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="flex flex-col gap-16 pb-16">
-      {/* Hero Section */}
-      <section className="relative py-20 md:py-32 overflow-hidden bg-muted/50 border-b">
-        <div className="container px-4">
-          <div className="flex flex-col md:flex-row items-center gap-12 text-center md:text-left">
+    <div className="flex flex-col gap-20 pb-20">
+      {/* Hero Section — editorial: image left, text right, hairline divider, serif display */}
+      <section className="relative border-b border-border/70">
+        <div className="container px-4 py-20 md:py-28">
+          <div className="grid grid-cols-1 md:grid-cols-[minmax(0,340px)_1fr] gap-10 md:gap-16 items-center">
+            {/* Portrait */}
             <motion.div
-              className="relative"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
+              className="flex md:justify-start justify-center"
+              initial={{ opacity: 0, x: -16 }}
+              animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <Avatar className="h-40 w-40 md:h-56 md:w-56 border-4 border-background shadow-xl">
-                <AvatarImage src={profile.avatar || 'https://picsum.photos/seed/admin/400/400'} alt={profile.name} />
-                <AvatarFallback>
-                  {profile.name
-                    .split(' ')
-                    .map((n) => n[0])
-                    .join('')
-                    .slice(0, 2)
-                    .toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="absolute -bottom-2 -right-2 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-full shadow-lg">
-                AVAILABLE FOR HIRE
+              <div className="relative w-56 h-56 md:w-full md:h-auto md:aspect-square">
+                <Avatar className="w-full h-full rounded-md border border-border shadow-sm">
+                  <AvatarImage
+                    src={profile.avatar || 'https://picsum.photos/seed/admin/600/600'}
+                    alt={profile.name}
+                    className="object-cover rounded-md"
+                  />
+                  <AvatarFallback className="rounded-md text-2xl">
+                    {profile.name
+                      .split(' ')
+                      .map((n) => n[0])
+                      .join('')
+                      .slice(0, 2)
+                      .toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
               </div>
             </motion.div>
 
+            {/* Copy */}
             <motion.div
-              className="flex-1 space-y-6"
-              initial={{ opacity: 0, x: 20 }}
+              className="space-y-6 text-center md:text-left md:border-l md:border-border/70 md:pl-16"
+              initial={{ opacity: 0, x: 16 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
+              transition={{ duration: 0.5, delay: 0.15 }}
             >
-              <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-                Hi, I&apos;m{' '}
-                <span className="text-muted-foreground underline decoration-primary/30 underline-offset-8">
-                  {profile.name}
+              <div className="flex items-center justify-center md:justify-start gap-2">
+                <span className="h-1.5 w-1.5 bg-primary" />
+                <span className="text-xs font-medium tracking-[0.2em] uppercase text-muted-foreground">
+                  Available for hire
                 </span>
+              </div>
+
+              <h1 className="font-serif text-4xl md:text-6xl tracking-tight leading-[1.05]">
+                {profile.name}
               </h1>
-              <p className="text-xl text-muted-foreground max-w-2xl leading-relaxed">
-                {profile.headline || profile.bio || 'A Full-Stack Developer specializing in high-performance web applications.'}
+
+              <p className="text-lg md:text-xl text-muted-foreground max-w-xl leading-relaxed font-light">
+                {profile.headline ||
+                  profile.bio ||
+                  'Second-year CSE student at BUET, passionate about web development and exploring AI/ML. I enjoy building modern, user-focused applications while continuously learning and experimenting with new technologies.'}
               </p>
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
+
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 pt-2">
                 <Link href="/projects">
-                  <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90">
+                  <Button size="lg" className="rounded-none px-6">
                     View My Work <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
                 <Link href="/about">
-                  <Button size="lg" variant="outline" className="border-border">
+                  <Button size="lg" variant="outline" className="rounded-none px-6 border-foreground/30">
                     Full Biography
                   </Button>
                 </Link>
@@ -147,11 +160,11 @@ export default function HomePage() {
 
       {/* Quick Stats/Summary */}
       <section className="container px-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
+        <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-border border-y border-border">
+          <Card className="rounded-none border-0 shadow-none">
             <CardHeader>
-              <Code className="h-8 w-8 text-primary mb-2" />
-              <CardTitle>Projects</CardTitle>
+              <Code className="h-6 w-6 text-primary mb-2" strokeWidth={1.5} />
+              <CardTitle className="font-serif text-2xl font-normal">Projects</CardTitle>
               <CardDescription>Check out my latest work</CardDescription>
             </CardHeader>
             <CardContent>
@@ -162,10 +175,10 @@ export default function HomePage() {
               </Link>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="rounded-none border-0 shadow-none">
             <CardHeader>
-              <BookOpen className="h-8 w-8 text-primary mb-2" />
-              <CardTitle>Blog</CardTitle>
+              <BookOpen className="h-6 w-6 text-primary mb-2" strokeWidth={1.5} />
+              <CardTitle className="font-serif text-2xl font-normal">Blog</CardTitle>
               <CardDescription>Thoughts on tech and development</CardDescription>
             </CardHeader>
             <CardContent>
@@ -176,10 +189,10 @@ export default function HomePage() {
               </Link>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="rounded-none border-0 shadow-none">
             <CardHeader>
-              <ImageIcon className="h-8 w-8 text-primary mb-2" />
-              <CardTitle>Gallery</CardTitle>
+              <ImageIcon className="h-6 w-6 text-primary mb-2" strokeWidth={1.5} />
+              <CardTitle className="font-serif text-2xl font-normal">Gallery</CardTitle>
               <CardDescription>Capturing moments and achievements</CardDescription>
             </CardHeader>
             <CardContent>
@@ -196,26 +209,26 @@ export default function HomePage() {
       {/* Featured Projects (DB-driven) */}
       {!loading && featuredProjects.length > 0 && (
         <section className="container px-4">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-3xl font-bold tracking-tight">Featured Projects</h2>
+          <div className="flex items-end justify-between mb-8 border-b border-border pb-4">
+            <h2 className="font-serif text-3xl tracking-tight">Featured Projects</h2>
             <Link href="/projects">
               <Button variant="ghost" className="gap-1 text-sm">
                 View all <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-border">
             {featuredProjects.map((project) => (
-              <Card key={project.id} className="overflow-hidden">
+              <Card key={project.id} className="rounded-none border-0 bg-background">
                 <CardHeader>
-                  <CardTitle className="text-xl">{project.name}</CardTitle>
+                  <CardTitle className="font-serif text-xl font-normal">{project.name}</CardTitle>
                   <CardDescription>{project.short_description}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
                     {Array.isArray(project.tech_stack) &&
                       project.tech_stack.slice(0, 4).map((tech) => (
-                        <Badge key={tech} variant="secondary">
+                        <Badge key={tech} variant="secondary" className="rounded-none">
                           {tech}
                         </Badge>
                       ))}
@@ -230,31 +243,29 @@ export default function HomePage() {
       {/* Latest Posts (DB-driven) */}
       {!loading && latestPosts.length > 0 && (
         <section className="container px-4">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-3xl font-bold tracking-tight">Latest Updates</h2>
+          <div className="flex items-end justify-between mb-8 border-b border-border pb-4">
+            <h2 className="font-serif text-3xl tracking-tight">Latest Updates</h2>
             <Link href="/posts">
               <Button variant="ghost" className="gap-1 text-sm">
                 View all <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
           </div>
-          <div className="space-y-4 max-w-2xl">
+          <div className="max-w-2xl divide-y divide-border border-y border-border">
             {latestPosts.map((post) => (
-              <Card key={post.id} className="shadow-none">
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-2 mb-2">
-                    <p className="text-sm text-muted-foreground">
-                      {post.created_at ? new Date(post.created_at).toLocaleDateString() : ''}
-                    </p>
-                    {post.pinned && (
-                      <Badge variant="default" className="gap-1">
-                        <Pin className="h-3 w-3" /> Pinned
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="leading-relaxed line-clamp-3">{post.text}</p>
-                </CardContent>
-              </Card>
+              <div key={post.id} className="py-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                    {post.created_at ? new Date(post.created_at).toLocaleDateString() : ''}
+                  </p>
+                  {post.pinned && (
+                    <Badge variant="default" className="gap-1 rounded-none">
+                      <Pin className="h-3 w-3" /> Pinned
+                    </Badge>
+                  )}
+                </div>
+                <p className="leading-relaxed line-clamp-3">{post.text}</p>
+              </div>
             ))}
           </div>
         </section>
@@ -263,20 +274,20 @@ export default function HomePage() {
       {/* Latest Blogs (DB-driven) */}
       {!loading && latestBlogs.length > 0 && (
         <section className="container px-4">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-3xl font-bold tracking-tight">Latest Blog Posts</h2>
+          <div className="flex items-end justify-between mb-8 border-b border-border pb-4">
+            <h2 className="font-serif text-3xl tracking-tight">Latest Blog Posts</h2>
             <Link href="/blog">
               <Button variant="ghost" className="gap-1 text-sm">
                 View all <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-border">
             {latestBlogs.map((blog) => (
               <Link key={blog.id} href={`/blog/${blog.slug}`}>
-                <Card className="h-full hover:border-primary/50 transition-colors">
+                <Card className="h-full rounded-none border-0 bg-background hover:bg-muted/40 transition-colors">
                   <CardHeader>
-                    <CardTitle className="text-lg">{blog.title}</CardTitle>
+                    <CardTitle className="font-serif text-lg font-normal">{blog.title}</CardTitle>
                     <CardDescription className="line-clamp-2">{blog.excerpt}</CardDescription>
                   </CardHeader>
                 </Card>
@@ -294,10 +305,13 @@ export default function HomePage() {
 
       {/* Featured Skills (hardcoded, per architecture doc) */}
       <section className="container px-4">
-        <h2 className="text-3xl font-bold tracking-tight mb-8">Top Skills</h2>
+        <h2 className="font-serif text-3xl tracking-tight mb-8 border-b border-border pb-4">Top Skills</h2>
         <div className="flex flex-wrap gap-3">
           {skills.slice(0, 8).map((skill) => (
-            <div key={skill.name} className="px-4 py-2 rounded-full bg-secondary text-secondary-foreground font-medium border">
+            <div
+              key={skill.name}
+              className="px-4 py-2 rounded-none bg-secondary text-secondary-foreground font-medium border border-border text-sm"
+            >
               {skill.name}
             </div>
           ))}
@@ -306,15 +320,20 @@ export default function HomePage() {
 
       {/* Recent Experience (hardcoded, per architecture doc) */}
       <section className="container px-4">
-        <h2 className="text-3xl font-bold tracking-tight mb-8">Experience</h2>
-        <div className="space-y-6">
-          {experiences.map((exp) => (
-            <div key={exp.company_name} className="border-l-2 border-primary pl-6 py-2">
-              <h3 className="text-xl font-bold">{exp.position}</h3>
-              <p className="text-muted-foreground">
-                {exp.company_name} • {exp.start_date} - {exp.end_date}
-              </p>
-              <p className="mt-2 max-w-2xl">{exp.description}</p>
+        <h2 className="font-serif text-3xl tracking-tight mb-8 border-b border-border pb-4">Experience</h2>
+        <div className="space-y-8">
+          {experiences.map((exp, idx) => (
+            <div key={exp.company_name} className="grid grid-cols-[auto_1fr] gap-6">
+              <span className="font-serif text-2xl text-muted-foreground/50 leading-none pt-1">
+                {String(idx + 1).padStart(2, '0')}
+              </span>
+              <div className="border-l border-border pl-6 py-1">
+                <h3 className="text-xl font-semibold">{exp.position}</h3>
+                <p className="text-muted-foreground text-sm uppercase tracking-wide mt-1">
+                  {exp.company_name} • {exp.start_date} - {exp.end_date}
+                </p>
+                <p className="mt-3 max-w-2xl leading-relaxed">{exp.description}</p>
+              </div>
             </div>
           ))}
         </div>
