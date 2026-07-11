@@ -38,6 +38,7 @@ export type PortfolioBlog = {
   excerpt: string;
   content?: string;
   category?: string;
+  tags?: string[];
   reading_time?: number;
   status?: string;
   published_at?: string;

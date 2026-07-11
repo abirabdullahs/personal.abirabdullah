@@ -23,10 +23,17 @@ export function Navbar() {
   const [isOpen, setIsOpen] = React.useState(false);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+      <div className="border-b border-border">
+        <div className="container flex h-7 items-center justify-between px-4 font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
+          <span>— Abir Abdullah / Engineering Journal</span>
+          <span className="hidden sm:inline">Est. 2026</span>
+        </div>
+      </div>
+      <div className="border-b border-border">
       <div className="container flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center space-x-2">
-          <span className="text-xl font-bold tracking-tighter">Portfolio</span>
+          <span className="text-xl font-heading font-semibold tracking-tight">Portfolio</span>
         </Link>
 
         {/* Desktop Nav */}
@@ -56,14 +63,14 @@ export function Navbar() {
 
           {/* Mobile Nav */}
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
-            <SheetTrigger className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-md hover:bg-accent transition-colors">
+            <SheetTrigger className="md:hidden inline-flex h-10 w-10 items-center justify-center hover:bg-accent transition-colors">
               <Menu className="h-6 w-6 text-muted-foreground" />
               <span className="sr-only">Toggle Menu</span>
             </SheetTrigger>
             <SheetContent side="right" className="w-[300px] sm:w-[400px] p-0">
               <div className="flex flex-col h-full bg-background">
                 <div className="p-6 border-b flex items-center justify-between">
-                  <span className="text-xl font-bold tracking-tighter">Menu</span>
+                  <span className="text-xl font-heading font-semibold tracking-tight">Menu</span>
                   <ThemeToggle />
                 </div>
                 <nav className="flex-1 px-6 py-8 flex flex-col gap-6">
@@ -73,7 +80,7 @@ export function Navbar() {
                       href={item.href}
                       onClick={() => setIsOpen(false)}
                       className={cn(
-                        "text-2xl font-semibold transition-all hover:translate-x-2",
+                        "text-2xl font-heading font-semibold transition-all hover:translate-x-2",
                         pathname === item.href ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                       )}
                     >
@@ -88,7 +95,7 @@ export function Navbar() {
                     className="flex items-center justify-between group"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-full bg-background border group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                      <div className="p-2 bg-background border group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                         <User className="h-5 w-5" />
                       </div>
                       <span className="font-medium text-muted-foreground group-hover:text-foreground">Admin Portal</span>
@@ -100,6 +107,7 @@ export function Navbar() {
             </SheetContent>
           </Sheet>
         </div>
+      </div>
       </div>
     </header>
   );

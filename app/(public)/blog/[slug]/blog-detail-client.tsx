@@ -101,30 +101,37 @@ function BlogPostPageClient({
   }
 
   return (
-    <article className="container max-w-3xl px-4 py-16 space-y-8">
-      <div className="space-y-4">
+    <article className="container max-w-[42rem] px-4 py-16 space-y-10">
+      <div className="space-y-6">
         <Link href="/blog">
           <Button variant="ghost" size="sm" className="-ml-3 text-muted-foreground hover:text-foreground">
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to blog
           </Button>
         </Link>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="flex items-center gap-1.5 font-medium">
-            <Tag className="h-3 w-3" />
-            {blog.category}
-          </Badge>
-          <span className="text-sm text-muted-foreground">•</span>
-          <span className="text-sm text-muted-foreground flex items-center gap-1">
-            <Clock className="h-3.5 w-3.5" /> {blog.reading_time} min read
-          </span>
+
+        <div className="border-y border-border py-3 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs uppercase tracking-wider text-muted-foreground">
+          <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> {blog.published_at}</span>
+          <span aria-hidden>·</span>
+          <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> {blog.reading_time} min read</span>
+          {blog.category && (
+            <>
+              <span aria-hidden>·</span>
+              <span className="flex items-center gap-1.5"><Tag className="h-3.5 w-3.5" /> {blog.category}</span>
+            </>
+          )}
         </div>
-        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight leading-tight">
+
+        <h1 className="text-4xl md:text-5xl leading-tight">
           {blog.title}
         </h1>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground border-b pb-6">
-          <Calendar className="h-4 w-4" />
-          <span>Published on {blog.published_at}</span>
-        </div>
+
+        {Array.isArray(blog.tags) && blog.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {blog.tags.map((tag: string) => (
+              <Badge key={tag} variant="outline" className="font-mono text-[10px]">{tag}</Badge>
+            ))}
+          </div>
+        )}
       </div>
 
       <MarkdownRenderer

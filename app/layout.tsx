@@ -1,5 +1,5 @@
 import type {Metadata} from 'next';
-import { Inter, JetBrains_Mono } from 'next/font/google';
+import { Inter, JetBrains_Mono, Fraunces } from 'next/font/google';
 import './globals.css';
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
@@ -14,6 +14,13 @@ const inter = Inter({
 const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
   variable: '--font-jetbrains-mono',
+});
+
+const fraunces = Fraunces({
+  subsets: ['latin'],
+  variable: '--font-fraunces',
+  weight: ['400', '500', '600', '700'],
+  style: ['normal', 'italic'],
 });
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.abirabdullah.me';
@@ -44,7 +51,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
-    <html lang="en" className={cn(inter.variable, jetbrainsMono.variable, "antialiased")} suppressHydrationWarning>
+    <html lang="en" className={cn(inter.variable, jetbrainsMono.variable, fraunces.variable, "antialiased")} suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans">
         <ThemeProvider
           attribute="class"

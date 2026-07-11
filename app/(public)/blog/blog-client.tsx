@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
@@ -41,46 +40,57 @@ function BlogPageClient() {
     }
   }, []);
 
-  return (
-    <div className="container px-4 py-16 space-y-12">
-      <div className="max-w-2xl">
-        <h1 className="text-4xl font-bold tracking-tight mb-4">Blog</h1>
-        <p className="text-lg text-muted-foreground">
-          Thoughts, tutorials, and insights on software development and technology.
-        </p>
-      </div>
+  const total = blogs.length;
 
-      {loading ? (
-        <div className="flex justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+  return (
+    <div className="container px-4 py-16">
+      <div className="max-w-[42rem] mx-auto">
+        <div className="mb-12 border-b border-border pb-6">
+          <p className="font-mono text-xs uppercase tracking-[0.15em] text-muted-foreground mb-3">— The Journal</p>
+          <h1 className="text-5xl mb-4">Blog</h1>
+          <p className="text-lg text-muted-foreground">
+            Notes, tutorials, and field reports from building software.
+          </p>
         </div>
-      ) : blogs.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-10 text-center text-muted-foreground">
-          No published blog posts are available yet. Publish one from the admin dashboard to see it here.
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {blogs.map((blog) => (
-            <Link key={blog.id} href={`/blog/${blog.slug}`}>
-              <Card className="h-full transition-all hover:border-primary/50 cursor-pointer">
-                <CardHeader>
-                  <div className="flex justify-between items-center mb-2">
-                    <Badge variant="outline">{blog.category}</Badge>
-                    <span className="text-sm text-muted-foreground">{blog.published_at}</span>
+
+        {loading ? (
+          <div className="flex justify-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : blogs.length === 0 ? (
+          <div className="border border-dashed border-border p-10 text-center text-muted-foreground">
+            No published blog posts are available yet. Publish one from the admin dashboard to see it here.
+          </div>
+        ) : (
+          <div className="divide-y divide-border">
+            {blogs.map((blog, idx) => (
+              <Link key={blog.id} href={`/blog/${blog.slug}`} className="group block py-8 first:pt-0">
+                <div className="flex items-center gap-3 font-mono text-xs uppercase tracking-wider text-muted-foreground mb-3">
+                  <span>No. {String(total - idx).padStart(2, '0')}</span>
+                  <span aria-hidden>·</span>
+                  <span>{blog.published_at}</span>
+                  {blog.category && (
+                    <>
+                      <span aria-hidden>·</span>
+                      <span>{blog.category}</span>
+                    </>
+                  )}
+                </div>
+                <h2 className="text-3xl mb-2 transition-colors group-hover:text-primary">{blog.title}</h2>
+                <p className="text-muted-foreground leading-relaxed line-clamp-2 mb-3">{blog.excerpt}</p>
+                <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap gap-1.5">
+                    {(blog.tags || []).slice(0, 4).map((tag) => (
+                      <Badge key={tag} variant="outline" className="font-mono text-[10px]">{tag}</Badge>
+                    ))}
                   </div>
-                  <CardTitle className="text-2xl group-hover:text-primary transition-colors">{blog.title}</CardTitle>
-                  <CardDescription className="text-base mt-2 line-clamp-2">
-                    {blog.excerpt}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <span className="text-sm font-medium">{blog.reading_time} min read</span>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
-      )}
+                  <span className="font-mono text-xs text-muted-foreground shrink-0">{blog.reading_time} min read</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
