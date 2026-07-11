@@ -6,6 +6,7 @@ import { ArrowLeft, Clock, Calendar, Tag, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { getSupabase } from '@/lib/supabase';
+import { MarkdownRenderer } from '@/components/markdown-renderer';
 
 const fallbackBlogs = [
   {
@@ -162,36 +163,10 @@ export default function BlogPostPage({
         </div>
       </div>
 
-      <div className="prose dark:prose-invert max-w-none text-foreground leading-relaxed text-lg space-y-6">
-        {blog.content ? (
-          blog.content.split('\n\n').map((paragraph: string, idx: number) => {
-            if (paragraph.startsWith('### ')) {
-              return <h3 key={idx} className="text-2xl font-bold mt-8 mb-4 text-foreground">{paragraph.replace('### ', '')}</h3>;
-            }
-            if (paragraph.startsWith('1. ') || paragraph.startsWith('- ')) {
-              return (
-                <ul key={idx} className="list-disc pl-6 space-y-2 my-4">
-                  {paragraph.split('\n').map((line, lineIdx) => (
-                    <li key={lineIdx} className="text-muted-foreground">
-                      {line.replace(/^[0-9]+\.\s+|^-\s+/, '')}
-                    </li>
-                  ))}
-                </ul>
-              );
-            }
-            if (paragraph.startsWith('```')) {
-              return (
-                <pre key={idx} className="bg-muted p-4 rounded-lg overflow-x-auto font-mono text-sm border my-4">
-                  <code>{paragraph.replace(/```[a-zA-Z]*\n|```/g, '')}</code>
-                </pre>
-              );
-            }
-            return <p key={idx} className="text-muted-foreground">{paragraph}</p>;
-          })
-        ) : (
-          <p className="text-muted-foreground italic">No content provided.</p>
-        )}
-      </div>
+      <MarkdownRenderer
+        content={blog.content}
+        className="prose dark:prose-invert max-w-none text-lg leading-relaxed"
+      />
     </article>
   );
 }

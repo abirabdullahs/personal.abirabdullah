@@ -33,6 +33,7 @@ import { BlogSection } from '@/components/admin/blog-section';
 import { PostsSection } from '@/components/admin/posts-section';
 import { GallerySection } from '@/components/admin/gallery-section';
 import { ImageUploader } from '@/components/admin/image-uploader';
+import { MarkdownEditor } from '@/components/admin/markdown-editor';
 import { toast } from "sonner";
 import { useRouter } from 'next/navigation';
 import { getSupabase } from '@/lib/supabase';
@@ -1538,16 +1539,14 @@ create policy "Allow all for admin writes" on gallery_albums for all using (true
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between items-center mb-1">
-                  <label className="text-xs font-bold uppercase text-muted-foreground">Content Markdown / Body Text</label>
-                  <span className="text-[10px] text-muted-foreground">Supports double newline \n\n for paragraphs</span>
+                  <label className="text-xs font-bold uppercase text-muted-foreground">Content</label>
+                  <span className="text-[10px] text-muted-foreground">Markdown supported — headings, bold/italic, lists, links, code blocks</span>
                 </div>
-                <Textarea 
-                  value={blogContent} 
-                  onChange={(e) => setBlogContent(e.target.value)} 
-                  placeholder="Draft your thoughts, use ### for subheadings..." 
-                  rows={8} 
-                  required 
-                  className="bg-muted/10 text-sm font-sans" 
+                <MarkdownEditor
+                  value={blogContent}
+                  onChange={setBlogContent}
+                  rows={10}
+                  placeholder="Draft your thoughts... use the toolbar or plain Markdown syntax."
                 />
               </div>
               <div className="flex justify-end gap-2 pt-4 border-t">
