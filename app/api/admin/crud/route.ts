@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     }
 
     const client = getSupabaseAdmin();
-    const tableName = table === 'gallery' ? 'gallery_images' : table;
+    const tableName = table;
 
     switch (action) {
       case 'create': {

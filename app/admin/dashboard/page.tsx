@@ -35,7 +35,7 @@ import { GallerySection } from '@/components/admin/gallery-section';
 import { toast } from "sonner";
 import { useRouter } from 'next/navigation';
 import { getSupabase } from '@/lib/supabase';
-import { createDefaultProfile, initialActivityLogs, portfolioStorageKeys, readAdminAuthSession, readStoredCollection, writeAdminAuthSession, writeStoredCollection, type PortfolioBlog, type PortfolioGalleryItem, type PortfolioPost, type PortfolioProject, type PortfolioProfile } from '@/lib/portfolio-data';
+import { createDefaultAlbum, createDefaultProfile, initialActivityLogs, portfolioStorageKeys, readAdminAuthSession, readStoredCollection, writeAdminAuthSession, writeStoredCollection, type PortfolioBlog, type PortfolioGalleryAlbum, type PortfolioGalleryItem, type PortfolioPost, type PortfolioProject, type PortfolioProfile } from '@/lib/portfolio-data';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -48,6 +48,7 @@ export default function AdminDashboard() {
   const [blogs, setBlogs] = React.useState<PortfolioBlog[]>([]);
   const [posts, setPosts] = React.useState<PortfolioPost[]>([]);
   const [gallery, setGallery] = React.useState<PortfolioGalleryItem[]>([]);
+  const [galleryAlbums, setGalleryAlbums] = React.useState<PortfolioGalleryAlbum[]>([]);
   const [activities, setActivities] = React.useState<any[]>([]);
   
   // Search and filters
@@ -94,6 +95,7 @@ export default function AdminDashboard() {
   // Gallery form states
   const [galName, setGalName] = React.useState('');
   const [galUrl, setGalUrl] = React.useState('');
+  const [galAlbumId, setGalAlbumId] = React.useState<string>('');
 
   // Post form states
   const [postText, setPostText] = React.useState('');
@@ -139,6 +141,9 @@ export default function AdminDashboard() {
 
     const storedGallery = readStoredCollection<PortfolioGalleryItem[]>(portfolioStorageKeys.gallery, []);
     setGallery(storedGallery);
+
+    const storedAlbums = readStoredCollection<PortfolioGalleryAlbum[]>(portfolioStorageKeys.galleryAlbums, []);
+    setGalleryAlbums(storedAlbums);
 
     const storedProfile = readStoredCollection<PortfolioProfile | null>(portfolioStorageKeys.profile, null);
     if (storedProfile) {
@@ -200,6 +205,20 @@ export default function AdminDashboard() {
           }
         } catch (err) {
           console.warn('Could not load gallery from Supabase. Falling back to local state.', err);
+        }
+
+        try {
+          const { data: albumData, error: albumError } = await client
+            .from('gallery_albums')
+            .select('*')
+            .order('created_at', { ascending: false });
+          if (albumError) throw albumError;
+          if (albumData) {
+            setGalleryAlbums(albumData as PortfolioGalleryAlbum[]);
+            writeStoredCollection(portfolioStorageKeys.galleryAlbums, albumData as PortfolioGalleryAlbum[]);
+          }
+        } catch (err) {
+          console.warn('Could not load gallery albums from Supabase (run the updated setup SQL if this table is missing).', err);
         }
       };
 
@@ -486,6 +505,7 @@ export default function AdminDashboard() {
   const openAddGallery = () => {
     setGalName('');
     setGalUrl('');
+    setGalAlbumId('');
     setIsGalleryModalOpen(true);
   };
 
@@ -500,7 +520,8 @@ export default function AdminDashboard() {
     const newImg = {
       id: targetId,
       name: galName,
-      url: galUrl
+      url: galUrl,
+      album_id: galAlbumId || null,
     };
 
     try {
@@ -553,6 +574,61 @@ export default function AdminDashboard() {
       toast.success(`Image removed`);
     }
     logActivity(`Removed gallery image "${name}"`);
+  };
+
+  // GALLERY ALBUM CRUD
+  const handleCreateAlbum = async (name: string) => {
+    const newAlbum: PortfolioGalleryAlbum = { ...createDefaultAlbum(), name };
+
+    try {
+      if (dbStatus === 'connected') {
+        const response = await fetch('/api/admin/crud', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'create', table: 'gallery_albums', payload: newAlbum }),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Album creation failed');
+      }
+
+      const updated = [newAlbum, ...galleryAlbums];
+      setGalleryAlbums(updated);
+      writeStoredCollection(portfolioStorageKeys.galleryAlbums, updated);
+      toast.success(`Album "${name}" created`);
+      logActivity(`Created gallery album "${name}"`);
+    } catch (err: any) {
+      console.error('Album create failed:', err);
+      toast.error(err.message || 'Unable to create album. Run the updated setup SQL if gallery_albums is missing.');
+    }
+  };
+
+  const handleDeleteAlbum = async (id: any, name: string) => {
+    const updated = galleryAlbums.filter((a) => a.id !== id);
+    setGalleryAlbums(updated);
+    writeStoredCollection(portfolioStorageKeys.galleryAlbums, updated);
+
+    const clearedGallery = gallery.map((img) => (String(img.album_id ?? '') === String(id) ? { ...img, album_id: null } : img));
+    setGallery(clearedGallery);
+    writeStoredCollection(portfolioStorageKeys.gallery, clearedGallery);
+
+    if (dbStatus === 'connected') {
+      try {
+        const response = await fetch('/api/admin/crud', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'delete', table: 'gallery_albums', id }),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Delete failed');
+        toast.success(`Album "${name}" deleted`);
+      } catch (err: any) {
+        console.error('Album delete failed:', err);
+        toast.error(`Database delete failed: ${err.message || err}. Removed from local workspace only.`);
+      }
+    } else {
+      toast.success(`Album "${name}" removed`);
+    }
+    logActivity(`Deleted gallery album "${name}"`);
   };
 
 
@@ -1099,8 +1175,11 @@ export default function AdminDashboard() {
             <GallerySection
               gallery={gallery}
               filteredGallery={filteredGallery}
+              albums={galleryAlbums}
               onAdd={openAddGallery}
               onDelete={handleDeleteGallery}
+              onCreateAlbum={handleCreateAlbum}
+              onDeleteAlbum={handleDeleteAlbum}
             />
           )}
 
@@ -1171,7 +1250,8 @@ export default function AdminDashboard() {
                     {[
                       { table: 'blogs', columns: 'id (PK), title, slug, excerpt, content, category, reading_time, published_at, status', count: blogs.length },
                       { table: 'projects', columns: 'id (PK), name, slug, short_description, tech_stack, github_repo, live_link, image_url, created_at', count: projects.length },
-                      { table: 'gallery', columns: 'id (PK), name, url', count: gallery.length }
+                      { table: 'gallery', columns: 'id (PK), name, url, album_id (FK -> gallery_albums), caption', count: gallery.length },
+                      { table: 'gallery_albums', columns: 'id (PK), name, description, cover_image', count: galleryAlbums.length }
                     ].map((tbl) => (
                       <div key={tbl.table} className="py-3 flex items-center justify-between text-sm">
                         <div>
@@ -1220,25 +1300,40 @@ create table if not exists blogs (
   status text default 'published'
 );
 
--- 3. Create gallery table
+-- 3. Create gallery albums table
+create table if not exists gallery_albums (
+  id bigint primary key,
+  name text not null,
+  description text,
+  cover_image text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- 4. Create gallery table (run this even if the table already exists —
+--    the "add column if not exists" lines below bring older tables up to date)
 create table if not exists gallery (
   id bigint primary key,
   name text not null,
   url text not null
 );
+alter table gallery add column if not exists album_id bigint references gallery_albums(id) on delete set null;
+alter table gallery add column if not exists caption text;
 
--- 4. Set row-level security and access policies
+-- 5. Set row-level security and access policies
 alter table projects enable row level security;
 alter table blogs enable row level security;
 alter table gallery enable row level security;
+alter table gallery_albums enable row level security;
 
 create policy "Allow public select" on projects for select using (true);
 create policy "Allow public select" on blogs for select using (true);
 create policy "Allow public select" on gallery for select using (true);
+create policy "Allow public select" on gallery_albums for select using (true);
 
 create policy "Allow all for admin writes" on projects for all using (true) with check (true);
 create policy "Allow all for admin writes" on blogs for all using (true) with check (true);
-create policy "Allow all for admin writes" on gallery for all using (true) with check (true);`}
+create policy "Allow all for admin writes" on gallery for all using (true) with check (true);
+create policy "Allow all for admin writes" on gallery_albums for all using (true) with check (true);`}
                   </pre>
                 </CardContent>
               </Card>
@@ -1479,6 +1574,19 @@ create policy "Allow all for admin writes" on gallery for all using (true) with 
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase text-muted-foreground">Image Asset URL</label>
                 <Input value={galUrl} onChange={(e) => setGalUrl(e.target.value)} required className="bg-muted/10 text-xs font-mono" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase text-muted-foreground">Album (optional)</label>
+                <select
+                  value={galAlbumId}
+                  onChange={(e) => setGalAlbumId(e.target.value)}
+                  className="w-full h-9 rounded-md border border-input bg-muted/10 px-3 text-sm"
+                >
+                  <option value="">No album (uncategorized)</option>
+                  {galleryAlbums.map((album) => (
+                    <option key={album.id} value={String(album.id)}>{album.name}</option>
+                  ))}
+                </select>
               </div>
               <div className="flex justify-end gap-2 pt-4 border-t">
                 <Button type="button" variant="ghost" className="text-xs" onClick={() => setIsGalleryModalOpen(false)}>Cancel</Button>

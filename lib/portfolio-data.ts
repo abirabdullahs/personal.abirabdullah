@@ -53,11 +53,22 @@ export type PortfolioPost = {
   project_id?: number | string | null;
 };
 
+export type PortfolioGalleryAlbum = {
+  id: number | string;
+  name: string;
+  description?: string;
+  cover_image?: string;
+  created_at?: string;
+};
+
 export type PortfolioGalleryItem = {
   id: number | string;
   name: string;
   url: string;
   caption?: string;
+  album_id?: number | string | null;
+  display_order?: number;
+  created_at?: string;
 };
 
 export type PortfolioProfile = {
@@ -78,6 +89,7 @@ export const portfolioStorageKeys = {
   blogs: 'portfolio_blogs',
   posts: 'portfolio_posts',
   gallery: 'portfolio_gallery',
+  galleryAlbums: 'portfolio_gallery_albums',
   activities: 'portfolio_activities',
   profile: 'admin_profile',
   siteProfile: 'site_admin_profile',
@@ -208,6 +220,16 @@ export function createDefaultGalleryItem(overrides: Partial<PortfolioGalleryItem
     name: '',
     url: '',
     caption: '',
+    album_id: null,
+    ...overrides,
+  };
+}
+
+export function createDefaultAlbum(overrides: Partial<PortfolioGalleryAlbum> = {}): PortfolioGalleryAlbum {
+  return {
+    id: Date.now(),
+    name: '',
+    description: '',
     ...overrides,
   };
 }
