@@ -94,6 +94,19 @@ export const portfolioStorageKeys = {
   activities: 'portfolio_activities',
   profile: 'admin_profile',
   siteProfile: 'site_admin_profile',
+  // Separate cache namespace for the admin dashboard's own optimistic UI.
+  // IMPORTANT: the dashboard must never read/write the keys above — those
+  // are read by public visitors as an instant-paint cache. The admin view
+  // fetches *all* rows (drafts, private posts, unpublished blogs) with no
+  // status/visibility filter, so if it shared the same cache keys, a public
+  // visitor's first paint could briefly show draft/private content pulled
+  // from that cache before the properly-filtered Supabase query overwrote
+  // it a moment later — content "appearing then disappearing".
+  adminProjects: 'admin_cache_projects',
+  adminBlogs: 'admin_cache_blogs',
+  adminPosts: 'admin_cache_posts',
+  adminGallery: 'admin_cache_gallery',
+  adminGalleryAlbums: 'admin_cache_gallery_albums',
 } as const;
 
 export function hasSupabaseConfig() {

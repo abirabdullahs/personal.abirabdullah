@@ -134,19 +134,19 @@ export default function AdminDashboard() {
   // If this component is rendering at all, the middleware has already verified
   // the session server-side — no client-side localStorage gate needed here.
   React.useEffect(() => {
-    const storedProjects = readStoredCollection<PortfolioProject[]>(portfolioStorageKeys.projects, []);
+    const storedProjects = readStoredCollection<PortfolioProject[]>(portfolioStorageKeys.adminProjects, []);
     setProjects(storedProjects);
 
-    const storedBlogs = readStoredCollection<PortfolioBlog[]>(portfolioStorageKeys.blogs, []);
+    const storedBlogs = readStoredCollection<PortfolioBlog[]>(portfolioStorageKeys.adminBlogs, []);
     setBlogs(storedBlogs);
 
-    const storedPosts = readStoredCollection<PortfolioPost[]>(portfolioStorageKeys.posts, []);
+    const storedPosts = readStoredCollection<PortfolioPost[]>(portfolioStorageKeys.adminPosts, []);
     setPosts(storedPosts);
 
-    const storedGallery = readStoredCollection<PortfolioGalleryItem[]>(portfolioStorageKeys.gallery, []);
+    const storedGallery = readStoredCollection<PortfolioGalleryItem[]>(portfolioStorageKeys.adminGallery, []);
     setGallery(storedGallery);
 
-    const storedAlbums = readStoredCollection<PortfolioGalleryAlbum[]>(portfolioStorageKeys.galleryAlbums, []);
+    const storedAlbums = readStoredCollection<PortfolioGalleryAlbum[]>(portfolioStorageKeys.adminGalleryAlbums, []);
     setGalleryAlbums(storedAlbums);
 
     const storedProfile = readStoredCollection<PortfolioProfile | null>(portfolioStorageKeys.profile, null);
@@ -178,7 +178,7 @@ export default function AdminDashboard() {
           if (projError) throw projError;
           if (projData) {
             setProjects(projData as PortfolioProject[]);
-            writeStoredCollection(portfolioStorageKeys.projects, projData as PortfolioProject[]);
+            writeStoredCollection(portfolioStorageKeys.adminProjects, projData as PortfolioProject[]);
           }
         } catch (err) {
           console.warn('Could not load projects from Supabase. Falling back to local state.', err);
@@ -192,10 +192,24 @@ export default function AdminDashboard() {
           if (blogError) throw blogError;
           if (blogData) {
             setBlogs(blogData as PortfolioBlog[]);
-            writeStoredCollection(portfolioStorageKeys.blogs, blogData as PortfolioBlog[]);
+            writeStoredCollection(portfolioStorageKeys.adminBlogs, blogData as PortfolioBlog[]);
           }
         } catch (err) {
           console.warn('Could not load blogs from Supabase. Falling back to local state.', err);
+        }
+
+        try {
+          const { data: postsData, error: postsError } = await client
+            .from('posts')
+            .select('*')
+            .order('created_at', { ascending: false });
+          if (postsError) throw postsError;
+          if (postsData) {
+            setPosts(postsData as PortfolioPost[]);
+            writeStoredCollection(portfolioStorageKeys.adminPosts, postsData as PortfolioPost[]);
+          }
+        } catch (err) {
+          console.warn('Could not load posts from Supabase. Falling back to local state.', err);
         }
 
         try {
@@ -205,7 +219,7 @@ export default function AdminDashboard() {
           if (galError) throw galError;
           if (galData) {
             setGallery(galData as PortfolioGalleryItem[]);
-            writeStoredCollection(portfolioStorageKeys.gallery, galData as PortfolioGalleryItem[]);
+            writeStoredCollection(portfolioStorageKeys.adminGallery, galData as PortfolioGalleryItem[]);
           }
         } catch (err) {
           console.warn('Could not load gallery from Supabase. Falling back to local state.', err);
@@ -219,7 +233,7 @@ export default function AdminDashboard() {
           if (albumError) throw albumError;
           if (albumData) {
             setGalleryAlbums(albumData as PortfolioGalleryAlbum[]);
-            writeStoredCollection(portfolioStorageKeys.galleryAlbums, albumData as PortfolioGalleryAlbum[]);
+            writeStoredCollection(portfolioStorageKeys.adminGalleryAlbums, albumData as PortfolioGalleryAlbum[]);
           }
         } catch (err) {
           console.warn('Could not load gallery albums from Supabase (run the updated setup SQL if this table is missing).', err);
@@ -425,7 +439,7 @@ export default function AdminDashboard() {
       }
 
       setProjects(updatedProjects);
-      writeStoredCollection(portfolioStorageKeys.projects, updatedProjects);
+      writeStoredCollection(portfolioStorageKeys.adminProjects, updatedProjects);
       setIsProjectModalOpen(false);
     } catch (err: any) {
       console.error("Project save failed:", err);
@@ -440,7 +454,7 @@ export default function AdminDashboard() {
   const executeDeleteProject = async (id: any, name: string) => {
     const filtered = projects.filter(p => p.id !== id);
     setProjects(filtered);
-    writeStoredCollection(portfolioStorageKeys.projects, filtered);
+    writeStoredCollection(portfolioStorageKeys.adminProjects, filtered);
 
     if (dbStatus === 'connected') {
       try {
@@ -545,7 +559,7 @@ export default function AdminDashboard() {
       }
 
       setBlogs(updatedBlogs);
-      writeStoredCollection(portfolioStorageKeys.blogs, updatedBlogs);
+      writeStoredCollection(portfolioStorageKeys.adminBlogs, updatedBlogs);
       setIsBlogModalOpen(false);
     } catch (err: any) {
       console.error("Blog save failed:", err);
@@ -560,7 +574,7 @@ export default function AdminDashboard() {
   const executeDeleteBlog = async (id: any, title: string) => {
     const filtered = blogs.filter(b => b.id !== id);
     setBlogs(filtered);
-    writeStoredCollection(portfolioStorageKeys.blogs, filtered);
+    writeStoredCollection(portfolioStorageKeys.adminBlogs, filtered);
 
     if (dbStatus === 'connected') {
       try {
@@ -619,7 +633,7 @@ export default function AdminDashboard() {
 
       const updated = [newImg, ...gallery];
       setGallery(updated);
-      writeStoredCollection(portfolioStorageKeys.gallery, updated);
+      writeStoredCollection(portfolioStorageKeys.adminGallery, updated);
       toast.success("Image uploaded to gallery");
       logActivity(`Added image "${galName}" to gallery`);
       setIsGalleryModalOpen(false);
@@ -636,7 +650,7 @@ export default function AdminDashboard() {
   const executeDeleteGallery = async (id: any, name: string) => {
     const filtered = gallery.filter(g => g.id !== id);
     setGallery(filtered);
-    writeStoredCollection(portfolioStorageKeys.gallery, filtered);
+    writeStoredCollection(portfolioStorageKeys.adminGallery, filtered);
 
     if (dbStatus === 'connected') {
       try {
@@ -675,7 +689,7 @@ export default function AdminDashboard() {
 
       const updated = [newAlbum, ...galleryAlbums];
       setGalleryAlbums(updated);
-      writeStoredCollection(portfolioStorageKeys.galleryAlbums, updated);
+      writeStoredCollection(portfolioStorageKeys.adminGalleryAlbums, updated);
       toast.success(`Album "${name}" created`);
       logActivity(`Created gallery album "${name}"`);
     } catch (err: any) {
@@ -687,11 +701,11 @@ export default function AdminDashboard() {
   const handleDeleteAlbum = async (id: any, name: string) => {
     const updated = galleryAlbums.filter((a) => a.id !== id);
     setGalleryAlbums(updated);
-    writeStoredCollection(portfolioStorageKeys.galleryAlbums, updated);
+    writeStoredCollection(portfolioStorageKeys.adminGalleryAlbums, updated);
 
     const clearedGallery = gallery.map((img) => (String(img.album_id ?? '') === String(id) ? { ...img, album_id: null } : img));
     setGallery(clearedGallery);
-    writeStoredCollection(portfolioStorageKeys.gallery, clearedGallery);
+    writeStoredCollection(portfolioStorageKeys.adminGallery, clearedGallery);
 
     if (dbStatus === 'connected') {
       try {
@@ -890,7 +904,7 @@ export default function AdminDashboard() {
         : [payload, ...posts];
 
       setPosts(updatedPosts);
-      writeStoredCollection(portfolioStorageKeys.posts, updatedPosts);
+      writeStoredCollection(portfolioStorageKeys.adminPosts, updatedPosts);
       setIsPostModalOpen(false);
       setEditingPost(null);
       logActivity(isEditing ? 'Updated a post' : 'Added a project update');
@@ -908,7 +922,7 @@ export default function AdminDashboard() {
   const executeDeletePost = async (id: any, name: string) => {
     const filtered = posts.filter((p) => p.id !== id);
     setPosts(filtered);
-    writeStoredCollection(portfolioStorageKeys.posts, filtered);
+    writeStoredCollection(portfolioStorageKeys.adminPosts, filtered);
 
     if (dbStatus === 'connected') {
       try {
