@@ -8,31 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { getSupabase } from '@/lib/supabase';
 import { MarkdownRenderer } from '@/components/markdown-renderer';
 
-const fallbackBlogs = [
-  {
-    id: 1,
-    title: "The Future of Web Development",
-    slug: "future-of-web-dev",
-    excerpt: "Exploring the latest trends and technologies shaping the web in 2024.",
-    content: "The web is evolving faster than ever. From server components to AI-assisted coding, developers have more power and tools at their disposal than at any time in history. \n\nIn this blog post, we discuss how frameworks like Next.js are redefining server-side rendering, and how modern platforms allow deployment at scale in seconds.\n\n### Key Takeaways:\n1. Server Components reduce bundle size dramatically.\n2. AI tools enhance coding productivity without replacing foundational knowledge.\n3. Dynamic real-time databases make offline-first synchronization easier.",
-    published_at: "2024-03-20",
-    reading_time: 5,
-    category: "Tech",
-    status: "published",
-  },
-  {
-    id: 2,
-    title: "Mastering TypeScript Generics",
-    slug: "mastering-typescript-generics",
-    excerpt: "A deep dive into one of TypeScript's most powerful features.",
-    content: "Generics allow you to write reusable, type-safe components. In this guide, we will explore advanced generic patterns including mapped types, conditional types, and more.\n\nUsing generics ensures that your functions and interfaces can handle various data structures while retaining robust type checking. Let's look at a quick example of a dynamic repository interface:\n\n```typescript\ninterface Repository<T> {\n  getById(id: string): Promise<T>;\n  list(): Promise<T[]>;\n}\n```\n\nBy leveraging this pattern, you can write modular code that scales seamlessly with your enterprise application.",
-    published_at: "2024-03-15",
-    reading_time: 8,
-    category: "Development",
-    status: "published",
-  }
-];
-
 export default function BlogPostPage({
   params,
 }: {
@@ -45,8 +20,7 @@ export default function BlogPostPage({
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    // 1. Immediate local load
-    let localFound = false;
+    // 1. Immediate local load (from real cached data only — no placeholder content)
     try {
       const stored = localStorage.getItem('portfolio_blogs');
       if (stored) {
@@ -54,21 +28,11 @@ export default function BlogPostPage({
         const found = parsed.find((b: any) => b.slug === slug);
         if (found) {
           setBlog(found);
-          localFound = true;
           setLoading(false);
         }
       }
     } catch (e) {
       console.error("Local storage lookup failed", e);
-    }
-
-    if (!localFound) {
-      // Try fallback default data
-      const defaultFound = fallbackBlogs.find(b => b.slug === slug);
-      if (defaultFound) {
-        setBlog(defaultFound);
-        setLoading(false);
-      }
     }
 
     // 2. Async background Supabase check if credentials exist
