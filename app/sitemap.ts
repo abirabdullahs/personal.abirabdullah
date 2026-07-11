@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { getSupabase } from '@/lib/supabase';
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://personal-abirabdullah.vercel.app';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.abirabdullah.me';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: MetadataRoute.Sitemap = [
