@@ -8,12 +8,12 @@ import { ArrowRight, Code, BookOpen, Image as ImageIcon, Loader2, Pin } from 'lu
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { skills } from '@/data/skills';
 import { experiences } from '@/data/experiences';
 import { EmptyState } from '@/components/empty-state';
 import { toast } from 'sonner';
 import { getSupabase } from '@/lib/supabase';
+import { checkSupabaseConfig } from '@/lib/supabase-status';
 import {
   portfolioStorageKeys,
   readStoredCollection,
@@ -46,7 +46,7 @@ export default function HomePage() {
     setLoading(false);
 
     // 2. Background sync from Supabase — updates the UI once real data arrives.
-    const hasSupabase = !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+    const hasSupabase = checkSupabaseConfig();
     if (!hasSupabase) return;
 
     async function syncSupabase() {
@@ -102,23 +102,25 @@ export default function HomePage() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <div className="relative w-56 h-56 md:w-72 md:h-72 lg:w-full lg:max-w-md rounded-3xl overflow-hidden border-4 border-emerald-800 shadow-xl">
-                <Avatar className="w-full h-full rounded-3xl border-none shadow-none">
-                  <AvatarImage
-                    src={profile.avatar || 'https://picsum.photos/seed/admin/600/600'}
-                    alt={profile.name}
-                    className="object-cover rounded-3xl"
-                  />
-                  <AvatarFallback className="rounded-3xl text-2xl">
+              {profile.avatar ? (
+                <img
+                  src={profile.avatar}
+                  alt={profile.name}
+                  referrerPolicy="no-referrer"
+                  className="w-64 sm:w-80 lg:w-full lg:max-w-md h-auto rounded-xl shadow-[0_30px_70px_-25px_rgba(0,0,0,0.3)] dark:shadow-[0_30px_70px_-25px_rgba(0,0,0,0.7)]"
+                />
+              ) : (
+                <div className="w-64 h-64 sm:w-80 sm:h-80 rounded-xl bg-secondary flex items-center justify-center shadow-[0_30px_70px_-25px_rgba(0,0,0,0.3)] dark:shadow-[0_30px_70px_-25px_rgba(0,0,0,0.7)]">
+                  <span className="font-serif text-4xl text-secondary-foreground">
                     {profile.name
                       .split(' ')
                       .map((n) => n[0])
                       .join('')
                       .slice(0, 2)
                       .toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-              </div>
+                  </span>
+                </div>
+              )}
             </motion.div>
 
             {/* Copy */}

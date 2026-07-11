@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ExternalLink, Github, Loader2, FolderGit2 } from "lucide-react";
 import Image from "next/image";
 import { getSupabase } from '@/lib/supabase';
+import { checkSupabaseConfig } from '@/lib/supabase-status';
 import { toast } from 'sonner';
 import { EmptyState } from '@/components/empty-state';
 import { portfolioStorageKeys, readStoredCollection, type PortfolioProject } from '@/lib/portfolio-data';
@@ -61,7 +62,7 @@ function ProjectsPageClient() {
     }
     setLoading(false);
 
-    const hasSupabase = !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+    const hasSupabase = checkSupabaseConfig();
     if (hasSupabase) {
       async function syncSupabase() {
         try {

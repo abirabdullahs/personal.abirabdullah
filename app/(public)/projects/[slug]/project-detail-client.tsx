@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ExternalLink, Github, Loader2 } from 'lucide-react';
 import { getSupabase } from '@/lib/supabase';
+import { checkSupabaseConfig } from '@/lib/supabase-status';
 import { toast } from 'sonner';
 import { portfolioStorageKeys, readStoredCollection, type PortfolioPost, type PortfolioProject } from '@/lib/portfolio-data';
 import { technologies } from '@/data/technologies';
@@ -41,7 +42,7 @@ function ProjectDetailPageClient() {
       setLoading(false);
     }
 
-    const hasSupabase = !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+    const hasSupabase = checkSupabaseConfig();
     if (!hasSupabase) {
       if (!cachedMatch) setNotFound(true);
       setLoading(false);

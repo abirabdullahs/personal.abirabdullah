@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { getSupabase } from '@/lib/supabase';
+import { checkSupabaseConfig } from '@/lib/supabase-status';
 import { toast } from 'sonner';
 import { portfolioStorageKeys, readStoredCollection, type PortfolioBlog } from '@/lib/portfolio-data';
 
@@ -17,7 +18,7 @@ function BlogPageClient() {
     setBlogs(stored.filter((b) => b.status === 'published'));
     setLoading(false);
 
-    const hasSupabase = !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+    const hasSupabase = checkSupabaseConfig();
     if (hasSupabase) {
       async function syncSupabase() {
         try {

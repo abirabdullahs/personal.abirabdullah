@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Pin, MessageSquareText } from "lucide-react";
 import { getSupabase } from '@/lib/supabase';
+import { checkSupabaseConfig } from '@/lib/supabase-status';
 import { toast } from 'sonner';
 import { EmptyState } from '@/components/empty-state';
 import { portfolioStorageKeys, readStoredCollection, type PortfolioPost, type PortfolioProject } from '@/lib/portfolio-data';
@@ -21,7 +22,7 @@ function PostsPageClient() {
     if (storedProjects.length > 0) setProjects(storedProjects);
     setLoading(false);
 
-    const hasSupabase = !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+    const hasSupabase = checkSupabaseConfig();
     if (hasSupabase) {
       async function syncSupabase() {
         try {

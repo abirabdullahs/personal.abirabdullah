@@ -6,6 +6,7 @@ import { ArrowLeft, Clock, Calendar, Tag, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { getSupabase } from '@/lib/supabase';
+import { checkSupabaseConfig } from '@/lib/supabase-status';
 import { toast } from 'sonner';
 import { MarkdownRenderer } from '@/components/markdown-renderer';
 
@@ -37,7 +38,7 @@ function BlogPostPageClient({
     }
 
     // 2. Async background Supabase check if credentials exist
-    const hasSupabase = !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+    const hasSupabase = checkSupabaseConfig();
     if (hasSupabase) {
       async function syncSupabase() {
         try {
