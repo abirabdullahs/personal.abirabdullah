@@ -649,8 +649,9 @@ export default function AdminDashboard() {
       return;
     }
 
-    let targetId: number | string = Date.now();
+    const targetId: number | string = Date.now();
     const basePayload = {
+      id: targetId,
       name: galName,
       url: galUrl,
       album_id: galAlbumId || null,
@@ -665,14 +666,9 @@ export default function AdminDashboard() {
         });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || 'Gallery save failed');
-        // gallery.id is auto-increment — never send a client-generated id on
-        // create. Use the real DB-assigned id from the insert response.
-        if (result.data?.id !== undefined) {
-          targetId = result.data.id;
-        }
       }
 
-      const newImg = { id: targetId, ...basePayload };
+      const newImg = basePayload;
 
       const updated = [newImg, ...gallery];
       setGallery(updated);
