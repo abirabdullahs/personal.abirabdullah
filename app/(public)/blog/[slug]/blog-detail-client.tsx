@@ -21,6 +21,7 @@ function BlogPostPageClient({
 
   const [blog, setBlog] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
+  const [relatedPosts, setRelatedPosts] = React.useState<any[]>([]);
 
   React.useEffect(() => {
     // 1. Immediate local load (from real cached data only — no placeholder content)
@@ -81,6 +82,56 @@ function BlogPostPageClient({
     // Fire view counter API in the background (fails silently if DB not connected)
     fetch(`/api/blogs/${slug}/views`, { method: 'POST' }).catch(() => {});
   }, [slug]);
+
+  // Related posts — fetched separately once we know the current post's category.
+  React.useEffect(() => {
+    if (!blog || !checkSupabaseConfig()) return;
+
+    let cancelled = false;
+
+    async function loadRelated() {
+      try {
+        const client = getSupabase();
+        let query = client
+          .from('blogs')
+          .select('id, title, slug, excerpt, featured_image, category, published_at')
+          .eq('status', 'published')
+          .neq('slug', slug)
+          .limit(3);
+
+        if (blog.category) {
+          query = query.eq('category', blog.category);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+
+        let results = data || [];
+
+        // Fall back to the latest other posts if nothing shares this category.
+        if (results.length === 0 && blog.category) {
+          const fallback = await client
+            .from('blogs')
+            .select('id, title, slug, excerpt, featured_image, category, published_at')
+            .eq('status', 'published')
+            .neq('slug', slug)
+            .order('published_at', { ascending: false })
+            .limit(3);
+          if (fallback.error) throw fallback.error;
+          results = fallback.data || [];
+        }
+
+        if (!cancelled) setRelatedPosts(results);
+      } catch (err) {
+        console.warn('Related posts unavailable:', err);
+      }
+    }
+
+    loadRelated();
+    return () => {
+      cancelled = true;
+    };
+  }, [blog, slug]);
 
   if (loading) {
     return (
@@ -155,6 +206,31 @@ function BlogPostPageClient({
         content={blog.content}
         className="prose dark:prose-invert max-w-none text-lg leading-relaxed"
       />
+
+      {relatedPosts.length > 0 && (
+        <div className="border-t border-border pt-10 space-y-6">
+          <p className="font-mono text-xs uppercase tracking-[0.15em] text-muted-foreground">— You Might Also Like</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            {relatedPosts.map((post) => (
+              <Link key={post.id} href={`/blog/${post.slug}`} className="group block">
+                {post.featured_image && (
+                  <div className="relative aspect-video overflow-hidden border border-border bg-muted mb-3">
+                    <Image
+                      src={post.featured_image}
+                      alt={post.title}
+                      fill
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      referrerPolicy="no-referrer"
+                    />
+                  </div>
+                )}
+                <h3 className="font-serif text-lg leading-snug transition-colors group-hover:text-primary">{post.title}</h3>
+                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{post.excerpt}</p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
     </article>
   );
 }

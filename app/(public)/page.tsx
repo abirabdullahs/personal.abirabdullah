@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { skills } from '@/data/skills';
 import { experiences } from '@/data/experiences';
 import { EmptyState } from '@/components/empty-state';
+import { GithubActivityFeed } from '@/components/github-activity-feed';
 import { toast } from 'sonner';
 import { getSupabase } from '@/lib/supabase';
 import { checkSupabaseConfig } from '@/lib/supabase-status';
@@ -341,6 +342,8 @@ export default function HomePage() {
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </section>
       )}
+
+      <GithubActivityFeed />
 
       {/* Featured Skills (hardcoded, per architecture doc) */}
       <section className="container px-4">
