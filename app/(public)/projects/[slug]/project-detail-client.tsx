@@ -141,7 +141,6 @@ function ProjectDetailPageClient() {
               </p>
             )}
             <h1 className="font-serif text-3xl md:text-4xl tracking-tight">{project.name}</h1>
-            <p className="text-base md:text-lg text-muted-foreground mt-3 max-w-2xl leading-relaxed">{project.short_description}</p>
           </div>
           <div className="flex gap-2 shrink-0">
             {project.github_repo && project.github_repo !== '#' && (
@@ -199,6 +198,8 @@ function ProjectDetailPageClient() {
           ))}
         </div>
       )}
+
+      <p className="text-base md:text-lg text-muted-foreground leading-relaxed">{project.short_description}</p>
 
       {updates.length > 0 && (
         <div className="space-y-6">
