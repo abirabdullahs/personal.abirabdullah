@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { uploadImage } from '@/lib/cloudinary';
 
-const MAX_BYTES = 8 * 1024 * 1024; // 8MB, matches typical Cloudinary free-tier friendly limit
+const MAX_BYTES = 3 * 1024 * 1024; // 3MB raw — base64 inflates ~37%, and Vercel's serverless
+// function body limit is 4.5MB, so this keeps requests safely under that.
 
 export async function POST(request: Request) {
   try {
@@ -20,7 +21,7 @@ export async function POST(request: Request) {
     // Rough size check on the base64 payload before sending it upstream.
     const approxBytes = (image.length * 3) / 4;
     if (approxBytes > MAX_BYTES) {
-      return NextResponse.json({ error: 'Image is too large (max 8MB).' }, { status: 413 });
+      return NextResponse.json({ error: 'Image is too large (max 3MB).' }, { status: 413 });
     }
 
     if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {

@@ -34,8 +34,10 @@ export function ImageUploader({ value, onChange, folder = 'portfolio', label = '
       toast.error('Please select an image file.');
       return;
     }
-    if (file.size > 8 * 1024 * 1024) {
-      toast.error('Image is too large (max 8MB).');
+    // Base64 inflates size ~37%, and Vercel's serverless function body limit
+    // is 4.5MB — keep the raw file well under that after inflation.
+    if (file.size > 3 * 1024 * 1024) {
+      toast.error('Image is too large (max 3MB). Try compressing it first.');
       return;
     }
 
@@ -47,7 +49,20 @@ export function ImageUploader({ value, onChange, folder = 'portfolio', label = '
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image: dataUri, folder }),
       });
-      const result = await response.json();
+
+      let result: any;
+      try {
+        result = await response.json();
+      } catch {
+        // Response wasn't JSON at all — e.g. a platform-level 413/502 error
+        // page instead of our route's own error response.
+        throw new Error(
+          response.status === 413
+            ? 'Image is too large for the server to accept. Try a smaller file.'
+            : `Upload failed (server returned an unexpected response, status ${response.status}).`
+        );
+      }
+
       if (!response.ok) throw new Error(result.error || 'Upload failed');
       onChange(result.url);
       toast.success(`${label} uploaded`);

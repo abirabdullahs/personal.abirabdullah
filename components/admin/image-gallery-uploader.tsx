@@ -43,8 +43,8 @@ export function ImageGalleryUploader({ images, onChange, folder = 'portfolio', l
         toast.error(`Skipped "${file.name}" — not an image file.`);
         continue;
       }
-      if (file.size > 8 * 1024 * 1024) {
-        toast.error(`Skipped "${file.name}" — too large (max 8MB).`);
+      if (file.size > 3 * 1024 * 1024) {
+        toast.error(`Skipped "${file.name}" — too large (max 3MB).`);
         continue;
       }
 
@@ -55,7 +55,18 @@ export function ImageGalleryUploader({ images, onChange, folder = 'portfolio', l
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ image: dataUri, folder }),
         });
-        const result = await response.json();
+
+        let result: any;
+        try {
+          result = await response.json();
+        } catch {
+          throw new Error(
+            response.status === 413
+              ? 'Image is too large for the server to accept.'
+              : `Upload failed (unexpected server response, status ${response.status}).`
+          );
+        }
+
         if (!response.ok) throw new Error(result.error || 'Upload failed');
         uploaded.push({ image_url: result.url, alt_text: '' });
       } catch (err: any) {
