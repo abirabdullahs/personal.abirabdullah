@@ -42,17 +42,29 @@ function ContactPageClient() {
   const [name, setName] = React.useState('');
   const [email, setEmail] = React.useState('');
   const [message, setMessage] = React.useState('');
+  const [website, setWebsite] = React.useState(''); // honeypot — real users never see/fill this
   const [sending, setSending] = React.useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (website) {
+      // Honeypot tripped — silently pretend success, don't actually send anything.
+      toast.success("Message sent — I'll get back to you soon.");
+      setName('');
+      setEmail('');
+      setMessage('');
+      setWebsite('');
+      return;
+    }
+
     setSending(true);
 
     try {
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, message }),
+        body: JSON.stringify({ name, email, message, website }),
       });
       const result = await res.json();
 
@@ -103,6 +115,19 @@ function ContactPageClient() {
         <div className="border-t border-border pt-10">
           <p className="font-mono text-xs uppercase tracking-[0.15em] text-muted-foreground mb-6">— Or send a message</p>
           <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Honeypot — hidden from real users via CSS, bots that auto-fill every field will trip it */}
+            <div className="absolute left-[-9999px]" aria-hidden="true">
+              <label htmlFor="website">Website</label>
+              <input
+                id="website"
+                name="website"
+                type="text"
+                tabIndex={-1}
+                autoComplete="off"
+                value={website}
+                onChange={(e) => setWebsite(e.target.value)}
+              />
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div className="space-y-2">
                 <Label htmlFor="name">Name</Label>

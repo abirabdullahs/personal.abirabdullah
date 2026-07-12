@@ -42,7 +42,16 @@ export type PortfolioBlog = {
   reading_time?: number;
   status?: string;
   published_at?: string;
-  featured_image?: string;
+  featured_image?: string | null;
+};
+
+export type ContactMessage = {
+  id: number | string;
+  name: string;
+  email: string;
+  message: string;
+  read?: boolean;
+  created_at?: string;
 };
 
 export type PortfolioPost = {
@@ -107,6 +116,7 @@ export const portfolioStorageKeys = {
   adminPosts: 'admin_cache_posts',
   adminGallery: 'admin_cache_gallery',
   adminGalleryAlbums: 'admin_cache_gallery_albums',
+  adminMessages: 'admin_cache_messages',
 } as const;
 
 export function hasSupabaseConfig() {

@@ -21,7 +21,8 @@ import {
   Calendar,
   AlertCircle,
   Loader2,
-  Menu
+  Menu,
+  Mail
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { ProjectSection } from '@/components/admin/project-section';
 import { BlogSection } from '@/components/admin/blog-section';
 import { PostsSection } from '@/components/admin/posts-section';
+import { MessagesSection } from '@/components/admin/messages-section';
 import { GallerySection } from '@/components/admin/gallery-section';
 import { ImageUploader } from '@/components/admin/image-uploader';
 import { ImageGalleryUploader, type GalleryImageItem } from '@/components/admin/image-gallery-uploader';
@@ -41,18 +43,19 @@ import { MarkdownEditor } from '@/components/admin/markdown-editor';
 import { toast } from "sonner";
 import { useRouter } from 'next/navigation';
 import { getSupabase } from '@/lib/supabase';
-import { createDefaultAlbum, createDefaultProfile, initialActivityLogs, portfolioStorageKeys, readStoredCollection, writeStoredCollection, type PortfolioBlog, type PortfolioGalleryAlbum, type PortfolioGalleryItem, type PortfolioPost, type PortfolioProject, type PortfolioProfile } from '@/lib/portfolio-data';
+import { createDefaultAlbum, createDefaultProfile, initialActivityLogs, portfolioStorageKeys, readStoredCollection, writeStoredCollection, type ContactMessage, type PortfolioBlog, type PortfolioGalleryAlbum, type PortfolioGalleryItem, type PortfolioPost, type PortfolioProject, type PortfolioProfile } from '@/lib/portfolio-data';
 
 export default function AdminDashboard() {
   const router = useRouter();
   
   // Navigation tabs
-  const [currentTab, setCurrentTab] = React.useState<'dashboard' | 'projects' | 'blogs' | 'posts' | 'gallery' | 'database' | 'settings'>('dashboard');
+  const [currentTab, setCurrentTab] = React.useState<'dashboard' | 'projects' | 'blogs' | 'posts' | 'gallery' | 'messages' | 'database' | 'settings'>('dashboard');
   
   // Main state collections
   const [projects, setProjects] = React.useState<PortfolioProject[]>([]);
   const [blogs, setBlogs] = React.useState<PortfolioBlog[]>([]);
   const [posts, setPosts] = React.useState<PortfolioPost[]>([]);
+  const [messages, setMessages] = React.useState<ContactMessage[]>([]);
   const [gallery, setGallery] = React.useState<PortfolioGalleryItem[]>([]);
   const [galleryAlbums, setGalleryAlbums] = React.useState<PortfolioGalleryAlbum[]>([]);
   const [activities, setActivities] = React.useState<any[]>([]);
@@ -73,7 +76,7 @@ export default function AdminDashboard() {
   const [editingPost, setEditingPost] = React.useState<PortfolioPost | null>(null);
   
   const [deleteConfirm, setDeleteConfirm] = React.useState<{
-    type: 'project' | 'blog' | 'gallery' | 'post' | null;
+    type: 'project' | 'blog' | 'gallery' | 'post' | 'message' | null;
     id: any;
     name: string;
   } | null>(null);
@@ -147,6 +150,9 @@ export default function AdminDashboard() {
     const storedPosts = readStoredCollection<PortfolioPost[]>(portfolioStorageKeys.adminPosts, []);
     setPosts(storedPosts);
 
+    const storedMessages = readStoredCollection<ContactMessage[]>(portfolioStorageKeys.adminMessages, []);
+    setMessages(storedMessages);
+
     const storedGallery = readStoredCollection<PortfolioGalleryItem[]>(portfolioStorageKeys.adminGallery, []);
     setGallery(storedGallery);
 
@@ -214,6 +220,22 @@ export default function AdminDashboard() {
           }
         } catch (err) {
           console.warn('Could not load posts from Supabase. Falling back to local state.', err);
+        }
+
+        try {
+          const response = await fetch('/api/admin/crud', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'list', table: 'contact_messages', orderBy: 'created_at', ascending: false }),
+          });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || 'Failed to load messages');
+          if (result.data) {
+            setMessages(result.data as ContactMessage[]);
+            writeStoredCollection(portfolioStorageKeys.adminMessages, result.data as ContactMessage[]);
+          }
+        } catch (err) {
+          console.warn('Could not load contact messages (run the updated setup SQL if this table is missing).', err);
         }
 
         try {
@@ -972,6 +994,57 @@ export default function AdminDashboard() {
     logActivity(`Deleted post "${name}"`);
   };
 
+  // MESSAGES
+  const handleToggleReadMessage = async (msg: ContactMessage) => {
+    const updated = messages.map((m) => (m.id === msg.id ? { ...m, read: !m.read } : m));
+    setMessages(updated);
+    writeStoredCollection(portfolioStorageKeys.adminMessages, updated);
+
+    if (dbStatus === 'connected') {
+      try {
+        const response = await fetch('/api/admin/crud', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'update', table: 'contact_messages', id: msg.id, payload: { ...msg, read: !msg.read } }),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Update failed');
+      } catch (err: any) {
+        console.error('Message update failed:', err);
+        toast.error(`Database update failed: ${err.message || err}. Updated locally only.`);
+      }
+    }
+  };
+
+  const handleDeleteMessage = (id: any, name: string) => {
+    setDeleteConfirm({ type: 'message', id, name });
+  };
+
+  const executeDeleteMessage = async (id: any, name: string) => {
+    const filtered = messages.filter((m) => m.id !== id);
+    setMessages(filtered);
+    writeStoredCollection(portfolioStorageKeys.adminMessages, filtered);
+
+    if (dbStatus === 'connected') {
+      try {
+        const response = await fetch('/api/admin/crud', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'delete', table: 'contact_messages', id }),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Delete failed');
+        toast.success('Message deleted');
+      } catch (err: any) {
+        console.error('Message delete failed:', err);
+        toast.error(`Database delete failed: ${err.message || err}. Removed from local workspace only.`);
+      }
+    } else {
+      toast.success('Message removed from local workspace');
+    }
+    logActivity(`Deleted message from "${name}"`);
+  };
+
   // Filters search query
   const filteredProjects = projects.filter((p) => 
     (p.name || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -985,6 +1058,12 @@ export default function AdminDashboard() {
 
   const filteredGallery = gallery.filter(g => 
     g.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredMessages = messages.filter((m) =>
+    (m.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (m.email || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (m.message || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const goToTab = (tab: typeof currentTab) => {
@@ -1050,6 +1129,18 @@ export default function AdminDashboard() {
         >
           <ImageIcon className="w-4 h-4" />
           Gallery
+        </Button>
+
+        <Button
+          variant="ghost"
+          onClick={() => goToTab('messages')}
+          className={`w-full justify-start gap-3 font-medium transition-colors ${currentTab === 'messages' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent/50'}`}
+        >
+          <Mail className="w-4 h-4" />
+          Messages
+          {messages.filter((m) => !m.read).length > 0 && (
+            <Badge className="ml-auto h-5 px-1.5 text-[10px]">{messages.filter((m) => !m.read).length}</Badge>
+          )}
         </Button>
 
         <div className="pt-4 px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">System</div>
@@ -1164,6 +1255,7 @@ export default function AdminDashboard() {
                 {currentTab === 'blogs' && 'Create drafts and publish industry insight articles directly to your blog.'}
                 {currentTab === 'posts' && 'Manage project updates and short status posts for the public site.'}
                 {currentTab === 'gallery' && 'Maintain a visual directory of setups, conferences, and design achievements.'}
+                {currentTab === 'messages' && 'View and manage messages submitted through the Contact page form.'}
                 {currentTab === 'database' && 'View your Cloud Supabase connection details and table mapping status.'}
                 {currentTab === 'settings' && 'Update your public profile information and change your login password.'}
               </p>
@@ -1198,7 +1290,7 @@ export default function AdminDashboard() {
               )}
             </div>
 
-            {(currentTab === 'projects' || currentTab === 'blogs' || currentTab === 'posts' || currentTab === 'gallery' || currentTab === 'dashboard') && (
+            {(currentTab === 'projects' || currentTab === 'blogs' || currentTab === 'posts' || currentTab === 'gallery' || currentTab === 'messages' || currentTab === 'dashboard') && (
               <div className="relative shrink-0">
                 <Input
                   placeholder="Search item..."
@@ -1363,6 +1455,16 @@ export default function AdminDashboard() {
             />
           )}
 
+          {/* TAB: CONTACT MESSAGES */}
+          {currentTab === 'messages' && (
+            <MessagesSection
+              messages={messages}
+              filteredMessages={filteredMessages}
+              onToggleRead={handleToggleReadMessage}
+              onDelete={handleDeleteMessage}
+            />
+          )}
+
           {/* TAB 5: DATABASE STATUS CONFIGURATION */}
           {currentTab === 'database' && (
             <div className="max-w-3xl space-y-6">
@@ -1431,7 +1533,8 @@ export default function AdminDashboard() {
                       { table: 'blogs', columns: 'id (PK), title, slug, excerpt, content, category, reading_time, published_at, status', count: blogs.length },
                       { table: 'projects', columns: 'id (PK), name, slug, short_description, tech_stack, github_repo, live_link, image_url, created_at', count: projects.length },
                       { table: 'gallery', columns: 'id (PK), name, url, album_id (FK -> gallery_albums), caption', count: gallery.length },
-                      { table: 'gallery_albums', columns: 'id (PK), name, description, cover_image', count: galleryAlbums.length }
+                      { table: 'gallery_albums', columns: 'id (PK), name, description, cover_image', count: galleryAlbums.length },
+                      { table: 'contact_messages', columns: 'id (PK), name, email, message, read, created_at', count: messages.length }
                     ].map((tbl) => (
                       <div key={tbl.table} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm">
                         <div>
@@ -1513,7 +1616,25 @@ create policy "Allow public select" on gallery_albums for select using (true);
 create policy "Allow all for admin writes" on projects for all using (true) with check (true);
 create policy "Allow all for admin writes" on blogs for all using (true) with check (true);
 create policy "Allow all for admin writes" on gallery for all using (true) with check (true);
-create policy "Allow all for admin writes" on gallery_albums for all using (true) with check (true);`}
+create policy "Allow all for admin writes" on gallery_albums for all using (true) with check (true);
+
+-- 6. Contact form messages
+-- SECURITY: this table holds real people's names/emails/messages, so
+-- unlike the other tables it gets NO select/write policies for the
+-- public role at all. RLS enabled + zero policies = fully locked down
+-- from the anon/authenticated API. Only the server-side service-role
+-- key (used by /api/contact to insert, and /api/admin/crud to read the
+-- dashboard's Messages tab) can touch this table — that key bypasses
+-- RLS entirely regardless of policies.
+create table if not exists contact_messages (
+  id bigint generated always as identity primary key,
+  name text not null,
+  email text not null,
+  message text not null,
+  read boolean default false,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+alter table contact_messages enable row level security;`}
                   </pre>
                 </CardContent>
               </Card>
@@ -1882,6 +2003,8 @@ create policy "Allow all for admin writes" on gallery_albums for all using (true
                       await executeDeleteGallery(id, name);
                     } else if (type === 'post') {
                       await executeDeletePost(id, name);
+                    } else if (type === 'message') {
+                      await executeDeleteMessage(id, name);
                     }
                   }}
                 >
