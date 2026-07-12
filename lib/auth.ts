@@ -2,7 +2,7 @@ import { SignJWT, jwtVerify } from 'jose';
 
 const JWT_SECRET = process.env.JWT_SECRET as string;
 const COOKIE_NAME = 'admin_session';
-const TOKEN_TTL = '7d';
+const TOKEN_TTL = '365d';
 
 export type AdminTokenPayload = {
   id: number | string;
