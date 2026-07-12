@@ -1744,13 +1744,14 @@ alter table contact_messages enable row level security;`}
 
       {/* MODAL OVERLAY 1: PROJECT SHOWCASE MODAL */}
       {isProjectModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-background border border-border w-full max-w-lg rounded-xl shadow-xl overflow-hidden animate-in fade-in-50 zoom-in-95 duration-250">
-            <div className="bg-muted/40 px-6 py-4 border-b flex justify-between items-center">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-background border border-border w-full max-w-lg rounded-xl shadow-xl overflow-hidden animate-in fade-in-50 zoom-in-95 duration-250 max-h-[90vh] flex flex-col">
+            <div className="bg-muted/40 px-6 py-4 border-b flex justify-between items-center shrink-0">
               <h2 className="font-extrabold tracking-tight text-lg">{editingProject ? 'Modify Project' : 'Create Showcase Project'}</h2>
               <Button size="icon" variant="ghost" onClick={() => setIsProjectModalOpen(false)} className="h-8 w-8 text-muted-foreground hover:text-foreground">✕</Button>
             </div>
-            <form onSubmit={handleSaveProject} className="p-6 space-y-4">
+            <form onSubmit={handleSaveProject} className="flex flex-col flex-1 min-h-0">
+              <div className="p-6 space-y-4 overflow-y-auto flex-1 min-h-0">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-xs font-bold uppercase text-muted-foreground">Project Name</label>
@@ -1797,7 +1798,8 @@ alter table contact_messages enable row level security;`}
                   />
                 )}
               </div>
-              <div className="flex justify-end gap-2 pt-4 border-t">
+              </div>
+              <div className="flex justify-end gap-2 p-4 border-t bg-background shrink-0">
                 <Button type="button" variant="ghost" className="text-xs" onClick={() => setIsProjectModalOpen(false)}>Cancel</Button>
                 <Button type="submit" className="text-xs">Save Changes</Button>
               </div>
@@ -1808,13 +1810,14 @@ alter table contact_messages enable row level security;`}
 
       {/* MODAL OVERLAY 2: BLOG POST WRITER MODAL */}
       {isBlogModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-background border border-border w-full max-w-2xl rounded-xl shadow-xl overflow-hidden animate-in fade-in-50 zoom-in-95 duration-250">
-            <div className="bg-muted/40 px-6 py-4 border-b flex justify-between items-center">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-background border border-border w-full max-w-2xl rounded-xl shadow-xl overflow-hidden animate-in fade-in-50 zoom-in-95 duration-250 max-h-[90vh] flex flex-col">
+            <div className="bg-muted/40 px-6 py-4 border-b flex justify-between items-center shrink-0">
               <h2 className="font-extrabold tracking-tight text-lg">{editingBlog ? 'Update Post' : 'Compose Blog Article'}</h2>
               <Button size="icon" variant="ghost" onClick={() => setIsBlogModalOpen(false)} className="h-8 w-8 text-muted-foreground hover:text-foreground">✕</Button>
             </div>
-            <form onSubmit={handleSaveBlog} className="p-6 space-y-4">
+            <form onSubmit={handleSaveBlog} className="flex flex-col flex-1 min-h-0">
+              <div className="p-6 space-y-4 overflow-y-auto flex-1 min-h-0">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-xs font-bold uppercase text-muted-foreground">Article Title</label>
@@ -1865,7 +1868,8 @@ alter table contact_messages enable row level security;`}
                   placeholder="Draft your thoughts... use the toolbar or plain Markdown syntax."
                 />
               </div>
-              <div className="flex justify-end gap-2 pt-4 border-t">
+              </div>
+              <div className="flex justify-end gap-2 p-4 border-t bg-background shrink-0">
                 <Button type="button" variant="ghost" className="text-xs" onClick={() => setIsBlogModalOpen(false)}>Cancel</Button>
                 <Button type="submit" className="text-xs">Publish Post</Button>
               </div>
@@ -1876,13 +1880,14 @@ alter table contact_messages enable row level security;`}
 
       {/* MODAL OVERLAY 3: GALLERY UPLOAD MODAL */}
       {isGalleryModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-background border border-border w-full max-w-md rounded-xl shadow-xl overflow-hidden animate-in fade-in-50 zoom-in-95 duration-200">
-            <div className="bg-muted/40 px-6 py-4 border-b flex justify-between items-center">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-background border border-border w-full max-w-md rounded-xl shadow-xl overflow-hidden animate-in fade-in-50 zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
+            <div className="bg-muted/40 px-6 py-4 border-b flex justify-between items-center shrink-0">
               <h2 className="font-extrabold tracking-tight text-lg">Add Gallery Image</h2>
               <Button size="icon" variant="ghost" onClick={() => setIsGalleryModalOpen(false)} className="h-8 w-8 text-muted-foreground hover:text-foreground">✕</Button>
             </div>
-            <form onSubmit={handleSaveGallery} className="p-6 space-y-4">
+            <form onSubmit={handleSaveGallery} className="flex flex-col flex-1 min-h-0">
+              <div className="p-6 space-y-4 overflow-y-auto flex-1 min-h-0">
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase text-muted-foreground">Image Label / Title</label>
                 <Input value={galName} onChange={(e) => setGalName(e.target.value)} placeholder="Landscape Setup" required className="bg-muted/10" />
@@ -1904,7 +1909,8 @@ alter table contact_messages enable row level security;`}
                   ))}
                 </select>
               </div>
-              <div className="flex justify-end gap-2 pt-4 border-t">
+              </div>
+              <div className="flex justify-end gap-2 p-4 border-t bg-background shrink-0">
                 <Button type="button" variant="ghost" className="text-xs" onClick={() => setIsGalleryModalOpen(false)}>Cancel</Button>
                 <Button type="submit" className="text-xs">Add Image</Button>
               </div>
@@ -1915,13 +1921,14 @@ alter table contact_messages enable row level security;`}
 
       {/* MODAL OVERLAY 4: POST / PROJECT UPDATE MODAL */}
       {isPostModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-background border border-border w-full max-w-md rounded-xl shadow-xl overflow-hidden animate-in fade-in-50 zoom-in-95 duration-200">
-            <div className="bg-muted/40 px-6 py-4 border-b flex justify-between items-center">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-background border border-border w-full max-w-md rounded-xl shadow-xl overflow-hidden animate-in fade-in-50 zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
+            <div className="bg-muted/40 px-6 py-4 border-b flex justify-between items-center shrink-0">
               <h2 className="font-extrabold tracking-tight text-lg">{editingPost ? 'Edit Post' : 'Add Post'}</h2>
               <Button size="icon" variant="ghost" onClick={() => { setIsPostModalOpen(false); setEditingPost(null); }} className="h-8 w-8 text-muted-foreground hover:text-foreground">✕</Button>
             </div>
-            <form onSubmit={handleSavePost} className="p-6 space-y-4">
+            <form onSubmit={handleSavePost} className="flex flex-col flex-1 min-h-0">
+              <div className="p-6 space-y-4 overflow-y-auto flex-1 min-h-0">
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase text-muted-foreground">Post Content</label>
                 <Textarea
@@ -1963,7 +1970,8 @@ alter table contact_messages enable row level security;`}
                   Pinned
                 </label>
               </div>
-              <div className="flex justify-end gap-2 pt-4 border-t">
+              </div>
+              <div className="flex justify-end gap-2 p-4 border-t bg-background shrink-0">
                 <Button type="button" variant="ghost" className="text-xs" onClick={() => { setIsPostModalOpen(false); setEditingPost(null); }}>Cancel</Button>
                 <Button type="submit" className="text-xs">{editingPost ? 'Update Post' : 'Add Post'}</Button>
               </div>
