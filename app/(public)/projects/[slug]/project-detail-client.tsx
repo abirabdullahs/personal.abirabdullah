@@ -142,22 +142,6 @@ function ProjectDetailPageClient() {
             )}
             <h1 className="font-serif text-3xl md:text-4xl tracking-tight">{project.name}</h1>
           </div>
-          <div className="flex gap-2 shrink-0">
-            {project.github_repo && project.github_repo !== '#' && (
-              <a href={project.github_repo} target="_blank" rel="noopener noreferrer">
-                <Button variant="outline" className="gap-1.5 rounded-none border-foreground/30">
-                  <Github className="h-4 w-4" /> Source
-                </Button>
-              </a>
-            )}
-            {project.live_link && project.live_link !== '#' && (
-              <a href={project.live_link} target="_blank" rel="noopener noreferrer">
-                <Button className="gap-1.5 rounded-none">
-                  <ExternalLink className="h-4 w-4" /> Live Site
-                </Button>
-              </a>
-            )}
-          </div>
         </div>
 
         {Array.isArray(project.tech_stack) && project.tech_stack.length > 0 && (
@@ -196,6 +180,25 @@ function ProjectDetailPageClient() {
               />
             </div>
           ))}
+        </div>
+      )}
+
+      {((project.github_repo && project.github_repo !== '#') || (project.live_link && project.live_link !== '#')) && (
+        <div className="flex gap-2">
+          {project.github_repo && project.github_repo !== '#' && (
+            <a href={project.github_repo} target="_blank" rel="noopener noreferrer">
+              <Button variant="outline" className="gap-1.5 rounded-none border-foreground/30">
+                <Github className="h-4 w-4" /> Source
+              </Button>
+            </a>
+          )}
+          {project.live_link && project.live_link !== '#' && (
+            <a href={project.live_link} target="_blank" rel="noopener noreferrer">
+              <Button className="gap-1.5 rounded-none">
+                <ExternalLink className="h-4 w-4" /> Live Site
+              </Button>
+            </a>
+          )}
         </div>
       )}
 
