@@ -39,7 +39,6 @@ import { MessagesSection } from '@/components/admin/messages-section';
 import { GallerySection } from '@/components/admin/gallery-section';
 import { ImageUploader } from '@/components/admin/image-uploader';
 import { ImageGalleryUploader, type GalleryImageItem } from '@/components/admin/image-gallery-uploader';
-import { MarkdownEditor } from '@/components/admin/markdown-editor';
 import { toast } from "sonner";
 import { useRouter } from 'next/navigation';
 import { getSupabase } from '@/lib/supabase';
@@ -50,6 +49,16 @@ export default function AdminDashboard() {
   
   // Navigation tabs
   const [currentTab, setCurrentTab] = React.useState<'dashboard' | 'projects' | 'blogs' | 'posts' | 'gallery' | 'messages' | 'database' | 'settings'>('dashboard');
+
+  // Land on the right tab when redirected here with ?tab=blogs (e.g. from the
+  // full-page blog editor after publishing/saving).
+  React.useEffect(() => {
+    const tab = new URLSearchParams(window.location.search).get('tab');
+    const validTabs = ['dashboard', 'projects', 'blogs', 'posts', 'gallery', 'messages', 'database', 'settings'];
+    if (tab && validTabs.includes(tab)) {
+      setCurrentTab(tab as typeof currentTab);
+    }
+  }, []);
   
   // Main state collections
   const [projects, setProjects] = React.useState<PortfolioProject[]>([]);
@@ -67,9 +76,6 @@ export default function AdminDashboard() {
   // Modal controllers
   const [isProjectModalOpen, setIsProjectModalOpen] = React.useState(false);
   const [editingProject, setEditingProject] = React.useState<any | null>(null);
-  
-  const [isBlogModalOpen, setIsBlogModalOpen] = React.useState(false);
-  const [editingBlog, setEditingBlog] = React.useState<any | null>(null);
   
   const [isGalleryModalOpen, setIsGalleryModalOpen] = React.useState(false);
   const [isPostModalOpen, setIsPostModalOpen] = React.useState(false);
@@ -95,18 +101,6 @@ export default function AdminDashboard() {
   const [projGalleryImages, setProjGalleryImages] = React.useState<GalleryImageItem[]>([]);
   const [originalProjGalleryImages, setOriginalProjGalleryImages] = React.useState<GalleryImageItem[]>([]);
   const [projGalleryLoading, setProjGalleryLoading] = React.useState(false);
-
-  // Blog form states
-  const [blogTitle, setBlogTitle] = React.useState('');
-  const [blogSlug, setBlogSlug] = React.useState('');
-  const [blogExcerpt, setBlogExcerpt] = React.useState('');
-  const [blogContent, setBlogContent] = React.useState('');
-  const [blogCategory, setBlogCategory] = React.useState('');
-  const [blogReadingTime, setBlogReadingTime] = React.useState(5);
-  const [blogStatus, setBlogStatus] = React.useState('published');
-  const [blogFeaturedImage, setBlogFeaturedImage] = React.useState('');
-  const [blogTagsInput, setBlogTagsInput] = React.useState('');
-  const [allTags, setAllTags] = React.useState<{ id: number | string; name: string; slug: string }[]>([]);
 
   // Gallery form states
   const [galName, setGalName] = React.useState('');
@@ -225,14 +219,6 @@ export default function AdminDashboard() {
         }
 
         try {
-          const { data: tagsData, error: tagsError } = await client.from('tags').select('*');
-          if (tagsError) throw tagsError;
-          if (tagsData) setAllTags(tagsData);
-        } catch (err) {
-          console.warn('Could not load tags from Supabase.', err);
-        }
-
-        try {
           const response = await fetch('/api/admin/crud', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -301,12 +287,6 @@ export default function AdminDashboard() {
       setProjSlug(projName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''));
     }
   }, [projName, editingProject]);
-
-  React.useEffect(() => {
-    if (blogTitle && !editingBlog) {
-      setBlogSlug(blogTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''));
-    }
-  }, [blogTitle, editingBlog]);
 
   // Sign out — clears the real httpOnly session cookie via the API, then leaves.
   const handleSignOut = async () => {
@@ -514,188 +494,13 @@ export default function AdminDashboard() {
   };
 
 
-  // CREATE/UPDATE BLOGS
+  // CREATE/UPDATE BLOGS — now handled by the full-page editor at /admin/blogs/editor
   const openAddBlog = () => {
-    setEditingBlog(null);
-    setBlogTitle('');
-    setBlogSlug('');
-    setBlogExcerpt('');
-    setBlogContent('');
-    setBlogCategory('Tech');
-    setBlogReadingTime(5);
-    setBlogStatus('published');
-    setBlogFeaturedImage('');
-    setBlogTagsInput('');
-    setIsBlogModalOpen(true);
+    router.push('/admin/blogs/editor');
   };
 
-  const openEditBlog = async (blog: any) => {
-    setEditingBlog(blog);
-    setBlogTitle(blog.title);
-    setBlogSlug(blog.slug);
-    setBlogExcerpt(blog.excerpt);
-    setBlogContent(blog.content || '');
-    setBlogCategory(blog.category);
-    setBlogReadingTime(blog.reading_time);
-    setBlogStatus(blog.status || 'published');
-    setBlogFeaturedImage(blog.featured_image || '');
-    setBlogTagsInput('');
-    setIsBlogModalOpen(true);
-
-    if (dbStatus === 'connected') {
-      try {
-        const client = getSupabase();
-        const { data, error } = await client
-          .from('blog_tags')
-          .select('tag_id, tags(name)')
-          .eq('blog_id', blog.id);
-        if (error) throw error;
-        const names = (data || [])
-          .map((row: any) => row.tags?.name)
-          .filter(Boolean);
-        setBlogTagsInput(names.join(', '));
-      } catch (err) {
-        console.warn('Could not load tags for this blog:', err);
-      }
-    }
-  };
-
-  function slugifyTagName(name: string): string {
-    return name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-  }
-
-  // Resolves a list of tag names to real `tags` row ids (creating any that
-  // don't exist yet), then syncs the `blog_tags` join rows for this blog so
-  // it links to exactly those tags — nothing more, nothing less.
-  async function syncBlogTags(blogId: number | string, tagNamesRaw: string): Promise<string[]> {
-    const desiredNames = [...new Set(
-      tagNamesRaw.split(',').map((t) => t.trim()).filter(Boolean)
-    )];
-
-    if (dbStatus !== 'connected') return desiredNames;
-
-    try {
-      const client = getSupabase();
-      let tagsCache = [...allTags];
-      const resolvedTagIds: (number | string)[] = [];
-
-      for (const name of desiredNames) {
-        const existing = tagsCache.find((t) => t.name.toLowerCase() === name.toLowerCase());
-        if (existing) {
-          resolvedTagIds.push(existing.id);
-          continue;
-        }
-        const { data, error } = await client
-          .from('tags')
-          .insert({ name, slug: slugifyTagName(name) })
-          .select('*')
-          .single();
-        if (error) throw error;
-        tagsCache = [...tagsCache, data];
-        resolvedTagIds.push(data.id);
-      }
-      setAllTags(tagsCache);
-
-      const { data: existingLinks, error: linksError } = await client
-        .from('blog_tags')
-        .select('tag_id')
-        .eq('blog_id', blogId);
-      if (linksError) throw linksError;
-
-      const existingTagIds = (existingLinks || []).map((row: any) => row.tag_id);
-      const toRemove = existingTagIds.filter((id) => !resolvedTagIds.includes(id));
-      const toAdd = resolvedTagIds.filter((id) => !existingTagIds.includes(id));
-
-      for (const tagId of toRemove) {
-        await client.from('blog_tags').delete().eq('blog_id', blogId).eq('tag_id', tagId);
-      }
-      if (toAdd.length > 0) {
-        await client.from('blog_tags').insert(toAdd.map((tagId) => ({ blog_id: blogId, tag_id: tagId })));
-      }
-
-      return desiredNames;
-    } catch (err) {
-      console.error('Tag sync failed:', err);
-      toast.error('Blog saved, but tags could not be synced.');
-      return desiredNames;
-    }
-  }
-
-  const handleSaveBlog = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!blogTitle || !blogSlug) {
-      toast.error("Please enter a title and slug");
-      return;
-    }
-
-    let targetId = editingBlog ? editingBlog.id : Date.now();
-
-    let updatedBlogs;
-
-    try {
-      if (dbStatus === 'connected') {
-        const response = await fetch('/api/admin/crud', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: editingBlog ? 'update' : 'create',
-            table: 'blogs',
-            id: editingBlog ? editingBlog.id : undefined,
-            payload: {
-              title: blogTitle,
-              slug: blogSlug,
-              excerpt: blogExcerpt,
-              content: blogContent,
-              category: blogCategory,
-              reading_time: Number(blogReadingTime),
-              status: blogStatus,
-              featured_image: blogFeaturedImage || null,
-            },
-          }),
-        });
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error || 'Blog save failed');
-        // blogs.id is auto-increment — never send a client-generated id on
-        // create. Use the real DB-assigned id from the insert response so
-        // later edits/deletes in this session target the correct row.
-        if (!editingBlog && result.data?.id !== undefined) {
-          targetId = result.data.id;
-        }
-      }
-
-      const syncedTags = await syncBlogTags(targetId, blogTagsInput);
-
-      const blogObj = {
-        id: targetId,
-        title: blogTitle,
-        slug: blogSlug,
-        excerpt: blogExcerpt,
-        content: blogContent,
-        category: blogCategory,
-        tags: syncedTags,
-        reading_time: Number(blogReadingTime),
-        status: blogStatus,
-        featured_image: blogFeaturedImage || null,
-        published_at: editingBlog ? editingBlog.published_at : new Date().toISOString().split('T')[0]
-      };
-
-      if (editingBlog) {
-        updatedBlogs = blogs.map(b => b.id === editingBlog.id ? blogObj : b);
-        toast.success("Blog post updated successfully");
-        logActivity(`Updated blog post "${blogTitle}"`);
-      } else {
-        updatedBlogs = [blogObj, ...blogs];
-        toast.success("Blog post published successfully");
-        logActivity(`Created blog post "${blogTitle}"`);
-      }
-
-      setBlogs(updatedBlogs);
-      writeStoredCollection(portfolioStorageKeys.adminBlogs, updatedBlogs);
-      setIsBlogModalOpen(false);
-    } catch (err: any) {
-      console.error("Blog save failed:", err);
-      toast.error(err.message || 'Unable to save blog post');
-    }
+  const openEditBlog = (blog: any) => {
+    router.push(`/admin/blogs/editor?id=${blog.id}`);
   };
 
   const handleDeleteBlog = (id: any, title: string) => {
@@ -1898,103 +1703,6 @@ alter table contact_messages enable row level security;`}
         </div>
       )}
 
-      {/* MODAL OVERLAY 2: BLOG POST WRITER MODAL */}
-      {isBlogModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-background border border-border w-full max-w-2xl rounded-xl shadow-xl overflow-hidden animate-in fade-in-50 zoom-in-95 duration-250 max-h-[90vh] flex flex-col">
-            <div className="bg-muted/40 px-6 py-4 border-b flex justify-between items-center shrink-0">
-              <h2 className="font-extrabold tracking-tight text-lg">{editingBlog ? 'Update Post' : 'Compose Blog Article'}</h2>
-              <Button size="icon" variant="ghost" onClick={() => setIsBlogModalOpen(false)} className="h-8 w-8 text-muted-foreground hover:text-foreground">✕</Button>
-            </div>
-            <form onSubmit={handleSaveBlog} className="flex flex-col flex-1 min-h-0">
-              <div className="p-6 space-y-4 overflow-y-auto flex-1 min-h-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase text-muted-foreground">Article Title</label>
-                  <Input value={blogTitle} onChange={(e) => setBlogTitle(e.target.value)} placeholder="E.g. JavaScript tips" required className="bg-muted/10" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase text-muted-foreground">Slug</label>
-                  <Input value={blogSlug} onChange={(e) => setBlogSlug(e.target.value)} placeholder="javascript-tips" required className="bg-muted/10 font-mono text-xs" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <ImageUploader value={blogFeaturedImage} onChange={setBlogFeaturedImage} folder="portfolio/blogs" label="Featured image" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase text-muted-foreground">Tags</label>
-                <Input
-                  value={blogTagsInput}
-                  onChange={(e) => setBlogTagsInput(e.target.value)}
-                  placeholder="react, web-dev, tutorial"
-                  className="bg-muted/10"
-                />
-                <p className="text-[10px] text-muted-foreground">Comma-separated. New tags are created automatically.</p>
-                {allTags.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 pt-1">
-                    {allTags.map((tag) => (
-                      <button
-                        key={tag.id}
-                        type="button"
-                        onClick={() => {
-                          const current = blogTagsInput.split(',').map((t) => t.trim()).filter(Boolean);
-                          if (current.some((t) => t.toLowerCase() === tag.name.toLowerCase())) return;
-                          setBlogTagsInput([...current, tag.name].join(', '));
-                        }}
-                        className="text-[10px] font-mono px-2 py-1 border border-border rounded-none text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-                      >
-                        + {tag.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase text-muted-foreground">Category</label>
-                  <Input value={blogCategory} onChange={(e) => setBlogCategory(e.target.value)} placeholder="Tech" required className="bg-muted/10 text-xs" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase text-muted-foreground">Reading Time (mins)</label>
-                  <Input type="number" value={blogReadingTime} onChange={(e) => setBlogReadingTime(Number(e.target.value))} required className="bg-muted/10 text-xs" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase text-muted-foreground">Status</label>
-                  <select 
-                    value={blogStatus} 
-                    onChange={(e) => setBlogStatus(e.target.value)} 
-                    className="w-full h-10 rounded-md border border-border bg-background px-3 text-sm focus-visible:ring-primary"
-                  >
-                    <option value="published">Published</option>
-                    <option value="draft">Draft</option>
-                  </select>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase text-muted-foreground">Excerpt (Short description)</label>
-                <Input value={blogExcerpt} onChange={(e) => setBlogExcerpt(e.target.value)} placeholder="Introductory summary..." required className="bg-muted/10 text-xs" />
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center mb-1">
-                  <label className="text-xs font-bold uppercase text-muted-foreground">Content</label>
-                  <span className="text-[10px] text-muted-foreground">Markdown supported — headings, bold/italic, lists, links, code blocks</span>
-                </div>
-                <MarkdownEditor
-                  value={blogContent}
-                  onChange={setBlogContent}
-                  rows={10}
-                  placeholder="Draft your thoughts... use the toolbar or plain Markdown syntax."
-                />
-              </div>
-              </div>
-              <div className="flex justify-end gap-2 p-4 border-t bg-background shrink-0">
-                <Button type="button" variant="ghost" className="text-xs" onClick={() => setIsBlogModalOpen(false)}>Cancel</Button>
-                <Button type="submit" className="text-xs">Publish Post</Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* MODAL OVERLAY 3: GALLERY UPLOAD MODAL */}
       {isGalleryModalOpen && (
