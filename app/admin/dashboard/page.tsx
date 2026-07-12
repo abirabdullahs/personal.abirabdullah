@@ -512,18 +512,7 @@ export default function AdminDashboard() {
       return;
     }
 
-    const targetId = editingBlog ? editingBlog.id : Date.now();
-    const blogObj = {
-      id: targetId,
-      title: blogTitle,
-      slug: blogSlug,
-      excerpt: blogExcerpt,
-      content: blogContent,
-      category: blogCategory,
-      reading_time: Number(blogReadingTime),
-      status: blogStatus,
-      published_at: editingBlog ? editingBlog.published_at : new Date().toISOString().split('T')[0]
-    };
+    let targetId = editingBlog ? editingBlog.id : Date.now();
 
     let updatedBlogs;
 
@@ -549,7 +538,25 @@ export default function AdminDashboard() {
         });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || 'Blog save failed');
+        // blogs.id is auto-increment — never send a client-generated id on
+        // create. Use the real DB-assigned id from the insert response so
+        // later edits/deletes in this session target the correct row.
+        if (!editingBlog && result.data?.id !== undefined) {
+          targetId = result.data.id;
+        }
       }
+
+      const blogObj = {
+        id: targetId,
+        title: blogTitle,
+        slug: blogSlug,
+        excerpt: blogExcerpt,
+        content: blogContent,
+        category: blogCategory,
+        reading_time: Number(blogReadingTime),
+        status: blogStatus,
+        published_at: editingBlog ? editingBlog.published_at : new Date().toISOString().split('T')[0]
+      };
 
       if (editingBlog) {
         updatedBlogs = blogs.map(b => b.id === editingBlog.id ? blogObj : b);
@@ -615,9 +622,8 @@ export default function AdminDashboard() {
       return;
     }
 
-    const targetId = Date.now();
-    const newImg = {
-      id: targetId,
+    let targetId: number | string = Date.now();
+    const basePayload = {
       name: galName,
       url: galUrl,
       album_id: galAlbumId || null,
@@ -628,11 +634,18 @@ export default function AdminDashboard() {
         const response = await fetch('/api/admin/crud', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'create', table: 'gallery', payload: newImg }),
+          body: JSON.stringify({ action: 'create', table: 'gallery', payload: basePayload }),
         });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || 'Gallery save failed');
+        // gallery.id is auto-increment — never send a client-generated id on
+        // create. Use the real DB-assigned id from the insert response.
+        if (result.data?.id !== undefined) {
+          targetId = result.data.id;
+        }
       }
+
+      const newImg = { id: targetId, ...basePayload };
 
       const updated = [newImg, ...gallery];
       setGallery(updated);
@@ -878,14 +891,14 @@ export default function AdminDashboard() {
     }
 
     const isEditing = Boolean(editingPost);
-    const payload: PortfolioPost = {
-      id: editingPost ? editingPost.id : Date.now(),
+    const basePayload = {
       text: postText,
       visibility: postVisibility,
       pinned: postPinned,
       project_id: postProjectId ? postProjectId : null,
       created_at: editingPost ? editingPost.created_at : new Date().toISOString(),
     };
+    let targetId: number | string = editingPost ? editingPost.id : Date.now();
 
     try {
       if (dbStatus === 'connected') {
@@ -894,13 +907,20 @@ export default function AdminDashboard() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(
             isEditing
-              ? { action: 'update', table: 'posts', id: payload.id, payload }
-              : { action: 'create', table: 'posts', payload }
+              ? { action: 'update', table: 'posts', id: targetId, payload: basePayload }
+              : { action: 'create', table: 'posts', payload: basePayload }
           ),
         });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || 'Post save failed');
+        // posts.id is auto-increment in Postgres — never send a client-generated
+        // id on create. Use the real DB-assigned id from the insert response.
+        if (!isEditing && result.data?.id !== undefined) {
+          targetId = result.data.id;
+        }
       }
+
+      const payload: PortfolioPost = { id: targetId, ...basePayload };
 
       const updatedPosts = isEditing
         ? posts.map((p) => (p.id === payload.id ? payload : p))
