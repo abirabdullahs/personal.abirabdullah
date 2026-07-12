@@ -45,13 +45,26 @@ function BlogPostPageClient({
       async function syncSupabase() {
         try {
           const client = getSupabase();
-          const { data, error } = await client
-            .from('blogs')
-            .select('*')
-            .eq('slug', slug)
-            .single();
+          let data: any;
 
-          if (error) throw error;
+          try {
+            const res = await client
+              .from('blogs')
+              .select('*, blog_tags(tags(name))')
+              .eq('slug', slug)
+              .single();
+            if (res.error) throw res.error;
+            data = {
+              ...res.data,
+              tags: (res.data.blog_tags || []).map((bt: any) => bt.tags?.name).filter(Boolean),
+            };
+          } catch (tagErr) {
+            console.warn('Blog tags join failed, falling back to plain blog fetch:', tagErr);
+            const res = await client.from('blogs').select('*').eq('slug', slug).single();
+            if (res.error) throw res.error;
+            data = res.data;
+          }
+
           if (data) {
             setBlog(data);
             

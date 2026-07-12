@@ -105,6 +105,8 @@ export default function AdminDashboard() {
   const [blogReadingTime, setBlogReadingTime] = React.useState(5);
   const [blogStatus, setBlogStatus] = React.useState('published');
   const [blogFeaturedImage, setBlogFeaturedImage] = React.useState('');
+  const [blogTagsInput, setBlogTagsInput] = React.useState('');
+  const [allTags, setAllTags] = React.useState<{ id: number | string; name: string; slug: string }[]>([]);
 
   // Gallery form states
   const [galName, setGalName] = React.useState('');
@@ -220,6 +222,14 @@ export default function AdminDashboard() {
           }
         } catch (err) {
           console.warn('Could not load posts from Supabase. Falling back to local state.', err);
+        }
+
+        try {
+          const { data: tagsData, error: tagsError } = await client.from('tags').select('*');
+          if (tagsError) throw tagsError;
+          if (tagsData) setAllTags(tagsData);
+        } catch (err) {
+          console.warn('Could not load tags from Supabase.', err);
         }
 
         try {
@@ -514,10 +524,11 @@ export default function AdminDashboard() {
     setBlogReadingTime(5);
     setBlogStatus('published');
     setBlogFeaturedImage('');
+    setBlogTagsInput('');
     setIsBlogModalOpen(true);
   };
 
-  const openEditBlog = (blog: any) => {
+  const openEditBlog = async (blog: any) => {
     setEditingBlog(blog);
     setBlogTitle(blog.title);
     setBlogSlug(blog.slug);
@@ -527,8 +538,87 @@ export default function AdminDashboard() {
     setBlogReadingTime(blog.reading_time);
     setBlogStatus(blog.status || 'published');
     setBlogFeaturedImage(blog.featured_image || '');
+    setBlogTagsInput('');
     setIsBlogModalOpen(true);
+
+    if (dbStatus === 'connected') {
+      try {
+        const client = getSupabase();
+        const { data, error } = await client
+          .from('blog_tags')
+          .select('tag_id, tags(name)')
+          .eq('blog_id', blog.id);
+        if (error) throw error;
+        const names = (data || [])
+          .map((row: any) => row.tags?.name)
+          .filter(Boolean);
+        setBlogTagsInput(names.join(', '));
+      } catch (err) {
+        console.warn('Could not load tags for this blog:', err);
+      }
+    }
   };
+
+  function slugifyTagName(name: string): string {
+    return name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  }
+
+  // Resolves a list of tag names to real `tags` row ids (creating any that
+  // don't exist yet), then syncs the `blog_tags` join rows for this blog so
+  // it links to exactly those tags — nothing more, nothing less.
+  async function syncBlogTags(blogId: number | string, tagNamesRaw: string): Promise<string[]> {
+    const desiredNames = [...new Set(
+      tagNamesRaw.split(',').map((t) => t.trim()).filter(Boolean)
+    )];
+
+    if (dbStatus !== 'connected') return desiredNames;
+
+    try {
+      const client = getSupabase();
+      let tagsCache = [...allTags];
+      const resolvedTagIds: (number | string)[] = [];
+
+      for (const name of desiredNames) {
+        const existing = tagsCache.find((t) => t.name.toLowerCase() === name.toLowerCase());
+        if (existing) {
+          resolvedTagIds.push(existing.id);
+          continue;
+        }
+        const { data, error } = await client
+          .from('tags')
+          .insert({ name, slug: slugifyTagName(name) })
+          .select('*')
+          .single();
+        if (error) throw error;
+        tagsCache = [...tagsCache, data];
+        resolvedTagIds.push(data.id);
+      }
+      setAllTags(tagsCache);
+
+      const { data: existingLinks, error: linksError } = await client
+        .from('blog_tags')
+        .select('tag_id')
+        .eq('blog_id', blogId);
+      if (linksError) throw linksError;
+
+      const existingTagIds = (existingLinks || []).map((row: any) => row.tag_id);
+      const toRemove = existingTagIds.filter((id) => !resolvedTagIds.includes(id));
+      const toAdd = resolvedTagIds.filter((id) => !existingTagIds.includes(id));
+
+      for (const tagId of toRemove) {
+        await client.from('blog_tags').delete().eq('blog_id', blogId).eq('tag_id', tagId);
+      }
+      if (toAdd.length > 0) {
+        await client.from('blog_tags').insert(toAdd.map((tagId) => ({ blog_id: blogId, tag_id: tagId })));
+      }
+
+      return desiredNames;
+    } catch (err) {
+      console.error('Tag sync failed:', err);
+      toast.error('Blog saved, but tags could not be synced.');
+      return desiredNames;
+    }
+  }
 
   const handleSaveBlog = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -572,6 +662,8 @@ export default function AdminDashboard() {
         }
       }
 
+      const syncedTags = await syncBlogTags(targetId, blogTagsInput);
+
       const blogObj = {
         id: targetId,
         title: blogTitle,
@@ -579,6 +671,7 @@ export default function AdminDashboard() {
         excerpt: blogExcerpt,
         content: blogContent,
         category: blogCategory,
+        tags: syncedTags,
         reading_time: Number(blogReadingTime),
         status: blogStatus,
         featured_image: blogFeaturedImage || null,
@@ -1826,6 +1919,34 @@ alter table contact_messages enable row level security;`}
               </div>
               <div className="space-y-2">
                 <ImageUploader value={blogFeaturedImage} onChange={setBlogFeaturedImage} folder="portfolio/blogs" label="Featured image" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase text-muted-foreground">Tags</label>
+                <Input
+                  value={blogTagsInput}
+                  onChange={(e) => setBlogTagsInput(e.target.value)}
+                  placeholder="react, web-dev, tutorial"
+                  className="bg-muted/10"
+                />
+                <p className="text-[10px] text-muted-foreground">Comma-separated. New tags are created automatically.</p>
+                {allTags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {allTags.map((tag) => (
+                      <button
+                        key={tag.id}
+                        type="button"
+                        onClick={() => {
+                          const current = blogTagsInput.split(',').map((t) => t.trim()).filter(Boolean);
+                          if (current.some((t) => t.toLowerCase() === tag.name.toLowerCase())) return;
+                          setBlogTagsInput([...current, tag.name].join(', '));
+                        }}
+                        className="text-[10px] font-mono px-2 py-1 border border-border rounded-none text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                      >
+                        + {tag.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">

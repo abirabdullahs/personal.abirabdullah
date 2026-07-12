@@ -24,14 +24,32 @@ function BlogPageClient() {
       async function syncSupabase() {
         try {
           const client = getSupabase();
-          const { data, error } = await client
-            .from('blogs')
-            .select('*')
-            .eq('status', 'published')
-            .order('published_at', { ascending: false });
+          let rows: PortfolioBlog[];
 
-          if (error) throw error;
-          const rows = (data as PortfolioBlog[]) || [];
+          try {
+            const { data, error } = await client
+              .from('blogs')
+              .select('*, blog_tags(tags(name))')
+              .eq('status', 'published')
+              .order('published_at', { ascending: false });
+            if (error) throw error;
+            rows = ((data as any[]) || []).map((row) => ({
+              ...row,
+              tags: (row.blog_tags || []).map((bt: any) => bt.tags?.name).filter(Boolean),
+            })) as PortfolioBlog[];
+          } catch (tagErr) {
+            // Tags join failed (e.g. FK relationship not set up yet) — don't
+            // let that take down the whole blog list, just show it without tags.
+            console.warn('Blog tags join failed, falling back to plain blog list:', tagErr);
+            const { data, error } = await client
+              .from('blogs')
+              .select('*')
+              .eq('status', 'published')
+              .order('published_at', { ascending: false });
+            if (error) throw error;
+            rows = (data as PortfolioBlog[]) || [];
+          }
+
           setBlogs(rows);
           localStorage.setItem(portfolioStorageKeys.blogs, JSON.stringify(rows));
         } catch (err: any) {
