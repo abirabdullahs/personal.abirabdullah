@@ -1001,7 +1001,7 @@ export default function AdminDashboard() {
         const response = await fetch('/api/admin/crud', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'update', table: 'contact_messages', id: msg.id, payload: { ...msg, read: !msg.read } }),
+          body: JSON.stringify({ action: 'update', table: 'contact_messages', id: msg.id, payload: { read: !msg.read } }),
         });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || 'Update failed');
