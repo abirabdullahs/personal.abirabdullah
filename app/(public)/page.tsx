@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { skills } from '@/data/skills';
 import { experiences } from '@/data/experiences';
+import { ventures } from '@/data/ventures';
 import { EmptyState } from '@/components/empty-state';
 import { GithubActivityFeed } from '@/components/github-activity-feed';
 import { toast } from 'sonner';
@@ -261,6 +262,58 @@ export default function HomePage() {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </section>
+      )}
+
+      {/* Ventures — separate from technical Projects on purpose, so it reads
+          as "founder/builder work" rather than a code project. */}
+      {ventures.length > 0 && (
+        <section className="container px-4">
+          <div className="flex items-end justify-between mb-8 border-b border-border pb-4">
+            <h2 className="font-serif text-3xl tracking-tight">Also Building</h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {ventures.map((venture) => {
+              const CardInner = (
+                <Card className="h-full rounded-none border-border hover:border-foreground/40 transition-colors">
+                  <CardHeader className="flex-row items-center gap-4 space-y-0">
+                    {venture.logo_url ? (
+                      <div className="relative h-14 w-14 shrink-0 overflow-hidden border border-border">
+                        <Image src={venture.logo_url} alt={`${venture.name} logo`} fill className="object-cover" referrerPolicy="no-referrer" />
+                      </div>
+                    ) : (
+                      <div className="h-14 w-14 shrink-0 flex items-center justify-center bg-foreground text-background font-serif text-2xl">
+                        {venture.name.charAt(0)}
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <CardTitle className="font-serif text-xl font-semibold">{venture.name}</CardTitle>
+                        <Badge variant="outline" className="rounded-none font-mono text-[10px] shrink-0">{venture.badge}</Badge>
+                      </div>
+                      <CardDescription className="text-sm">{venture.tagline}</CardDescription>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{venture.description}</p>
+                    {venture.link && (
+                      <span className="inline-flex items-center gap-1 text-sm font-medium mt-3 text-primary">
+                        Visit site <ArrowRight className="h-3.5 w-3.5" />
+                      </span>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+
+              return venture.link ? (
+                <Link key={venture.name} href={venture.link} target="_blank" rel="noopener noreferrer">
+                  {CardInner}
+                </Link>
+              ) : (
+                <div key={venture.name}>{CardInner}</div>
+              );
+            })}
           </div>
         </section>
       )}
