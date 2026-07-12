@@ -55,7 +55,7 @@ export function Navbar() {
 
         <div className="flex items-center space-x-2">
           <ThemeToggle />
-          <Link href="/admin/login" className="hidden md:block">
+          <Link href="/admin/dashboard" className="hidden md:block">
             <Button variant="ghost" size="icon" className="hover:bg-accent">
               <User className="h-5 w-5" />
               <span className="sr-only">Admin Login</span>
@@ -91,7 +91,7 @@ export function Navbar() {
                 </nav>
                 <div className="p-6 border-t bg-muted/50">
                   <Link 
-                    href="/admin/login" 
+                    href="/admin/dashboard" 
                     onClick={() => setIsOpen(false)}
                     className="flex items-center justify-between group"
                   >

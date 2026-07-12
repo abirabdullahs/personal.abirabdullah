@@ -4,12 +4,19 @@ import { verifyAdminToken, ADMIN_COOKIE_NAME } from '@/lib/auth';
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Let the login page and login API through without a token.
-  if (
-    pathname === '/admin/login' ||
-    pathname === '/api/admin/login' ||
-    pathname === '/api/admin/logout'
-  ) {
+  const token = request.cookies.get(ADMIN_COOKIE_NAME)?.value;
+  const session = token ? await verifyAdminToken(token) : null;
+
+  // Already logged in and trying to view the login page — go straight to
+  // the dashboard instead of making them log in again.
+  if (pathname === '/admin/login') {
+    if (session) {
+      return NextResponse.redirect(new URL('/admin/dashboard', request.url));
+    }
+    return NextResponse.next();
+  }
+
+  if (pathname === '/api/admin/login' || pathname === '/api/admin/logout') {
     return NextResponse.next();
   }
 
@@ -19,9 +26,6 @@ export async function middleware(request: NextRequest) {
   if (!isAdminPage && !isAdminApi) {
     return NextResponse.next();
   }
-
-  const token = request.cookies.get(ADMIN_COOKIE_NAME)?.value;
-  const session = token ? await verifyAdminToken(token) : null;
 
   if (!session) {
     if (isAdminApi) {
