@@ -390,9 +390,12 @@ export default function HomePage() {
 }
 
 function pickFeaturedProjects(projects: PortfolioProject[]): PortfolioProject[] {
-  const featured = projects.filter((p) => p.featured);
-  const pool = featured.length > 0 ? featured : projects;
-  return pool.slice(0, 3);
+  // NOTE: there's no admin UI yet to toggle a project's `featured` flag, so
+  // relying on it here was unreliable (e.g. exactly one row ending up
+  // featured=true, via a DB default or manual edit, would hide the rest).
+  // Until that control exists, always show the most recent projects —
+  // the query is already ordered by created_at descending.
+  return projects.slice(0, 3);
 }
 
 function pickLatestPublicPosts(posts: PortfolioPost[]): PortfolioPost[] {

@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowLeft, Clock, Calendar, Tag, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -136,6 +137,19 @@ function BlogPostPageClient({
           </div>
         )}
       </div>
+
+      {blog.featured_image && (
+        <div className="relative aspect-video overflow-hidden border border-border bg-muted">
+          <Image
+            src={blog.featured_image}
+            alt={blog.title}
+            fill
+            className="object-cover"
+            referrerPolicy="no-referrer"
+            priority
+          />
+        </div>
+      )}
 
       <MarkdownRenderer
         content={blog.content}

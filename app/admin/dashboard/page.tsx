@@ -101,6 +101,7 @@ export default function AdminDashboard() {
   const [blogCategory, setBlogCategory] = React.useState('');
   const [blogReadingTime, setBlogReadingTime] = React.useState(5);
   const [blogStatus, setBlogStatus] = React.useState('published');
+  const [blogFeaturedImage, setBlogFeaturedImage] = React.useState('');
 
   // Gallery form states
   const [galName, setGalName] = React.useState('');
@@ -490,6 +491,7 @@ export default function AdminDashboard() {
     setBlogCategory('Tech');
     setBlogReadingTime(5);
     setBlogStatus('published');
+    setBlogFeaturedImage('');
     setIsBlogModalOpen(true);
   };
 
@@ -502,6 +504,7 @@ export default function AdminDashboard() {
     setBlogCategory(blog.category);
     setBlogReadingTime(blog.reading_time);
     setBlogStatus(blog.status || 'published');
+    setBlogFeaturedImage(blog.featured_image || '');
     setIsBlogModalOpen(true);
   };
 
@@ -533,6 +536,7 @@ export default function AdminDashboard() {
               category: blogCategory,
               reading_time: Number(blogReadingTime),
               status: blogStatus,
+              featured_image: blogFeaturedImage || null,
             },
           }),
         });
@@ -555,6 +559,7 @@ export default function AdminDashboard() {
         category: blogCategory,
         reading_time: Number(blogReadingTime),
         status: blogStatus,
+        featured_image: blogFeaturedImage || null,
         published_at: editingBlog ? editingBlog.published_at : new Date().toISOString().split('T')[0]
       };
 
@@ -1698,6 +1703,9 @@ create policy "Allow all for admin writes" on gallery_albums for all using (true
                   <label className="text-xs font-bold uppercase text-muted-foreground">Slug</label>
                   <Input value={blogSlug} onChange={(e) => setBlogSlug(e.target.value)} placeholder="javascript-tips" required className="bg-muted/10 font-mono text-xs" />
                 </div>
+              </div>
+              <div className="space-y-2">
+                <ImageUploader value={blogFeaturedImage} onChange={setBlogFeaturedImage} folder="portfolio/blogs" label="Featured image" />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">

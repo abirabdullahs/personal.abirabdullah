@@ -4,6 +4,7 @@ import * as React from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { getSupabase } from '@/lib/supabase';
 import { checkSupabaseConfig } from '@/lib/supabase-status';
 import { toast } from 'sonner';
@@ -67,26 +68,41 @@ function BlogPageClient() {
           <div className="divide-y divide-border">
             {blogs.map((blog, idx) => (
               <Link key={blog.id} href={`/blog/${blog.slug}`} className="group block py-8 first:pt-0">
-                <div className="flex items-center gap-3 font-mono text-xs uppercase tracking-wider text-muted-foreground mb-3">
-                  <span>No. {String(total - idx).padStart(2, '0')}</span>
-                  <span aria-hidden>·</span>
-                  <span>{blog.published_at}</span>
-                  {blog.category && (
-                    <>
-                      <span aria-hidden>·</span>
-                      <span>{blog.category}</span>
-                    </>
+                <div className="flex flex-col sm:flex-row gap-5">
+                  {blog.featured_image && (
+                    <div className="relative w-full sm:w-40 aspect-video sm:aspect-square shrink-0 overflow-hidden border border-border bg-muted">
+                      <Image
+                        src={blog.featured_image}
+                        alt={blog.title}
+                        fill
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        referrerPolicy="no-referrer"
+                      />
+                    </div>
                   )}
-                </div>
-                <h2 className="font-serif text-2xl md:text-3xl mb-2 transition-colors group-hover:text-primary">{blog.title}</h2>
-                <p className="text-muted-foreground leading-relaxed line-clamp-2 mb-3">{blog.excerpt}</p>
-                <div className="flex items-center justify-between">
-                  <div className="flex flex-wrap gap-1.5">
-                    {(blog.tags || []).slice(0, 4).map((tag) => (
-                      <Badge key={tag} variant="outline" className="font-mono text-[10px]">{tag}</Badge>
-                    ))}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 font-mono text-xs uppercase tracking-wider text-muted-foreground mb-3">
+                      <span>No. {String(total - idx).padStart(2, '0')}</span>
+                      <span aria-hidden>·</span>
+                      <span>{blog.published_at}</span>
+                      {blog.category && (
+                        <>
+                          <span aria-hidden>·</span>
+                          <span>{blog.category}</span>
+                        </>
+                      )}
+                    </div>
+                    <h2 className="font-serif text-2xl md:text-3xl mb-2 transition-colors group-hover:text-primary">{blog.title}</h2>
+                    <p className="text-muted-foreground leading-relaxed line-clamp-2 mb-3">{blog.excerpt}</p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex flex-wrap gap-1.5">
+                        {(blog.tags || []).slice(0, 4).map((tag) => (
+                          <Badge key={tag} variant="outline" className="font-mono text-[10px]">{tag}</Badge>
+                        ))}
+                      </div>
+                      <span className="font-mono text-xs text-muted-foreground shrink-0">{blog.reading_time} min read</span>
+                    </div>
                   </div>
-                  <span className="font-mono text-xs text-muted-foreground shrink-0">{blog.reading_time} min read</span>
                 </div>
               </Link>
             ))}
