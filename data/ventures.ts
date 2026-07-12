@@ -15,7 +15,7 @@ export const ventures: Venture[] = [
     tagline: 'A perfume brand',
     description: 'A fragrance startup I founded - building a perfume brand from scratch, from formulation to launch.',
     logo_url: '',
-    link: 'www.centfume.com',
+    link: 'https://centfume.com',
     badge: 'Founder',
   },
 ];
