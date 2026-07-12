@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { contactInfo } from '@/data/contact';
 import { WhatsappIcon } from '@/components/whatsapp-icon';
+import { TurnstileWidget } from '@/components/turnstile-widget';
 
 const quickActions = [
   {
@@ -43,7 +44,10 @@ function ContactPageClient() {
   const [email, setEmail] = React.useState('');
   const [message, setMessage] = React.useState('');
   const [website, setWebsite] = React.useState(''); // honeypot — real users never see/fill this
+  const [turnstileToken, setTurnstileToken] = React.useState('');
   const [sending, setSending] = React.useState(false);
+
+  const hasTurnstile = !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,13 +62,18 @@ function ContactPageClient() {
       return;
     }
 
+    if (hasTurnstile && !turnstileToken) {
+      toast.error('Please complete the verification challenge.');
+      return;
+    }
+
     setSending(true);
 
     try {
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, message, website }),
+        body: JSON.stringify({ name, email, message, website, turnstileToken }),
       });
       const result = await res.json();
 
@@ -74,6 +83,7 @@ function ContactPageClient() {
       setName('');
       setEmail('');
       setMessage('');
+      setTurnstileToken('');
     } catch (err: any) {
       toast.error(err.message || 'Something went wrong. Please try again.');
     } finally {
@@ -150,7 +160,10 @@ function ContactPageClient() {
                 placeholder="What's on your mind?"
               />
             </div>
-            <Button type="submit" disabled={sending} className="gap-2">
+            {hasTurnstile && (
+              <TurnstileWidget onVerify={setTurnstileToken} onExpire={() => setTurnstileToken('')} />
+            )}
+            <Button type="submit" disabled={sending || (hasTurnstile && !turnstileToken)} className="gap-2">
               {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               {sending ? 'Sending...' : 'Send message'}
             </Button>
