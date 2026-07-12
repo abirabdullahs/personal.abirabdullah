@@ -9,6 +9,7 @@ import { getSupabase } from '@/lib/supabase';
 import { checkSupabaseConfig } from '@/lib/supabase-status';
 import { toast } from 'sonner';
 import { EmptyState } from '@/components/empty-state';
+import { GalleryLightbox } from '@/components/gallery-lightbox';
 import { portfolioStorageKeys, readStoredCollection, type PortfolioGalleryAlbum, type PortfolioGalleryItem } from '@/lib/portfolio-data';
 
 const PAGE_SIZE = 12; // multiple of the 2/3/4-column grid so rows stay full
@@ -36,6 +37,7 @@ function GalleryPageClient() {
   const [loading, setLoading] = React.useState(true);
   const [loadingMore, setLoadingMore] = React.useState(false);
   const [hasMore, setHasMore] = React.useState(true);
+  const [lightboxIndex, setLightboxIndex] = React.useState<number | null>(null);
   const hasSupabase = React.useMemo(() => checkSupabaseConfig(), []);
 
   // Initial load: cached instant-paint + first page + albums + lightweight counts
@@ -172,8 +174,12 @@ function GalleryPageClient() {
       ) : (
         <>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3">
-            {images.map((image) => (
-              <div key={image.id} className="group relative aspect-square overflow-hidden border border-border bg-muted cursor-pointer">
+            {images.map((image, idx) => (
+              <div
+                key={image.id}
+                onClick={() => setLightboxIndex(idx)}
+                className="group relative aspect-square overflow-hidden border border-border bg-muted cursor-pointer"
+              >
                 <Image
                   src={image.url}
                   alt={image.name}
@@ -198,6 +204,13 @@ function GalleryPageClient() {
           )}
         </>
       )}
+
+      <GalleryLightbox
+        images={images}
+        index={lightboxIndex}
+        onOpenChange={(open) => !open && setLightboxIndex(null)}
+        onNavigate={setLightboxIndex}
+      />
     </div>
   );
 }

@@ -251,7 +251,8 @@ export default function AdminDashboard() {
         try {
           const { data: galData, error: galError } = await client
             .from('gallery')
-            .select('*');
+            .select('*')
+            .order('id', { ascending: false });
           if (galError) throw galError;
           if (galData) {
             setGallery(galData as PortfolioGalleryItem[]);
