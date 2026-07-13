@@ -10,6 +10,7 @@ import { ArrowLeft, ExternalLink, Github, Loader2 } from 'lucide-react';
 import { getSupabase } from '@/lib/supabase';
 import { checkSupabaseConfig } from '@/lib/supabase-status';
 import { toast } from 'sonner';
+import { ShareButton } from '@/components/share-button';
 import { portfolioStorageKeys, readStoredCollection, type PortfolioPost, type PortfolioProject } from '@/lib/portfolio-data';
 import { technologies } from '@/data/technologies';
 
@@ -142,6 +143,7 @@ function ProjectDetailPageClient() {
             )}
             <h1 className="font-serif text-3xl md:text-4xl tracking-tight">{project.name}</h1>
           </div>
+          <ShareButton title={project.name} text={project.short_description} />
         </div>
 
         {Array.isArray(project.tech_stack) && project.tech_stack.length > 0 && (

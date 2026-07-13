@@ -27,6 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           card: 'summary_large_image',
           title: data.title,
           description: data.excerpt || undefined,
+          images: data.featured_image ? [data.featured_image] : undefined,
         },
       };
     }

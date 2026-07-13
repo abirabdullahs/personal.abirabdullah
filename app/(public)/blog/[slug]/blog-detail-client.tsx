@@ -10,6 +10,7 @@ import { getSupabase } from '@/lib/supabase';
 import { checkSupabaseConfig } from '@/lib/supabase-status';
 import { toast } from 'sonner';
 import { MarkdownRenderer } from '@/components/markdown-renderer';
+import { ShareButton } from '@/components/share-button';
 
 function BlogPostPageClient({
   params,
@@ -177,16 +178,19 @@ function BlogPostPageClient({
           </Button>
         </Link>
 
-        <div className="border-y border-border py-3 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs uppercase tracking-wider text-muted-foreground">
-          <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> {blog.published_at}</span>
-          <span aria-hidden>·</span>
-          <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> {blog.reading_time} min read</span>
-          {blog.category && (
-            <>
-              <span aria-hidden>·</span>
-              <span className="flex items-center gap-1.5"><Tag className="h-3.5 w-3.5" /> {blog.category}</span>
-            </>
-          )}
+        <div className="border-y border-border py-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 font-mono text-xs uppercase tracking-wider text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> {blog.published_at}</span>
+            <span aria-hidden>·</span>
+            <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> {blog.reading_time} min read</span>
+            {blog.category && (
+              <>
+                <span aria-hidden>·</span>
+                <span className="flex items-center gap-1.5"><Tag className="h-3.5 w-3.5" /> {blog.category}</span>
+              </>
+            )}
+          </div>
+          <ShareButton title={blog.title} text={blog.excerpt} />
         </div>
 
         <h1 className="font-serif text-3xl md:text-5xl leading-tight">
