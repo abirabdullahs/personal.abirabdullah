@@ -1,4 +1,5 @@
 import { FileText, Edit3, Trash2 } from 'lucide-react';
+import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -30,44 +31,39 @@ export function BlogSection({ blogs, filteredBlogs, onAdd, onEdit, onDelete }: B
           No blog posts matched the current search.
         </div>
       ) : (
-        <Card className="overflow-hidden border-border bg-card shadow-none">
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-left">
-              <thead className="bg-muted/30">
-                <tr>
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Title</th>
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</th>
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Category</th>
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredBlogs.map((blog) => (
-                  <tr key={blog.id} className="border-t border-border/60">
-                    <td className="px-4 py-3">
-                      <div className="font-medium">{blog.title}</div>
-                      <div className="text-sm text-muted-foreground">{blog.excerpt}</div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge variant={blog.status === 'published' ? 'default' : 'secondary'}>{blog.status}</Badge>
-                    </td>
-                    <td className="px-4 py-3">{blog.category}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-2">
-                        <Button size="icon" variant="ghost" onClick={() => onEdit(blog)}>
-                          <Edit3 className="h-4 w-4" />
-                        </Button>
-                        <Button size="icon" variant="ghost" onClick={() => onDelete(blog.id, blog.title)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+        <div className="space-y-3">
+          {filteredBlogs.map((blog) => (
+            <Card key={blog.id} className="border-border bg-card shadow-none p-4">
+              <div className="flex flex-col sm:flex-row gap-4">
+                {blog.featured_image && (
+                  <div className="relative w-full sm:w-32 aspect-video sm:aspect-square shrink-0 overflow-hidden rounded-md border border-border bg-muted">
+                    <Image src={blog.featured_image} alt={blog.title} fill className="object-cover" referrerPolicy="no-referrer" />
+                  </div>
+                )}
+
+                <div className="flex-1 min-w-0 space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant={blog.status === 'published' ? 'default' : 'secondary'}>{blog.status}</Badge>
+                    {blog.category && <Badge variant="outline">{blog.category}</Badge>}
+                  </div>
+                  <div>
+                    <p className="font-medium leading-snug break-words">{blog.title}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-2 mt-0.5">{blog.excerpt}</p>
+                  </div>
+                </div>
+
+                <div className="flex sm:flex-col gap-2 shrink-0 self-start">
+                  <Button size="icon" variant="ghost" onClick={() => onEdit(blog)} aria-label="Edit post">
+                    <Edit3 className="h-4 w-4" />
+                  </Button>
+                  <Button size="icon" variant="ghost" onClick={() => onDelete(blog.id, blog.title)} aria-label="Delete post">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
       )}
     </div>
   );
