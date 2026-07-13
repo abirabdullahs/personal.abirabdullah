@@ -1,11 +1,41 @@
 'use client';
 
 import * as React from 'react';
-import { Bold, Code, Eye, Heading2, Image as ImageIcon, Italic, Link as LinkIcon, List, ListOrdered, Loader2, Pencil } from 'lucide-react';
+import { useEditor, EditorContent } from '@tiptap/react';
+import { BubbleMenu } from '@tiptap/react/menus';
+import StarterKit from '@tiptap/starter-kit';
+import Link from '@tiptap/extension-link';
+import Image from '@tiptap/extension-image';
+import Underline from '@tiptap/extension-underline';
+import TextAlign from '@tiptap/extension-text-align';
+import { Markdown } from 'tiptap-markdown';
+import {
+  Bold,
+  Italic,
+  UnderlineIcon,
+  Strikethrough,
+  Code,
+  Heading1,
+  Heading2,
+  Heading3,
+  Quote,
+  List,
+  ListOrdered,
+  Link as LinkIcon,
+  Image as ImageIcon,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  Undo2,
+  Redo2,
+  Eye,
+  Pencil,
+  Loader2,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { MarkdownRenderer } from '@/components/markdown-renderer';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 type MarkdownEditorProps = {
   value: string;
@@ -18,25 +48,6 @@ type MarkdownEditorProps = {
   imageFolder?: string;
 };
 
-type WrapOption = {
-  icon: React.ElementType;
-  label: string;
-  before: string;
-  after?: string;
-  placeholder?: string;
-  block?: boolean;
-};
-
-const toolbarItems: WrapOption[] = [
-  { icon: Bold, label: 'Bold', before: '**', after: '**', placeholder: 'bold text' },
-  { icon: Italic, label: 'Italic', before: '_', after: '_', placeholder: 'italic text' },
-  { icon: Heading2, label: 'Heading', before: '### ', placeholder: 'Heading', block: true },
-  { icon: LinkIcon, label: 'Link', before: '[', after: '](https://)', placeholder: 'link text' },
-  { icon: List, label: 'Bullet list', before: '- ', placeholder: 'list item', block: true },
-  { icon: ListOrdered, label: 'Numbered list', before: '1. ', placeholder: 'list item', block: true },
-  { icon: Code, label: 'Code block', before: '```\n', after: '\n```', placeholder: 'code here', block: true },
-];
-
 function fileToDataUri(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -46,63 +57,79 @@ function fileToDataUri(file: File): Promise<string> {
   });
 }
 
+function ToolbarButton({
+  active,
+  disabled,
+  onClick,
+  title,
+  children,
+}: {
+  active?: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Button
+      type="button"
+      variant={active ? 'secondary' : 'ghost'}
+      size="icon"
+      className="h-7 w-7"
+      title={title}
+      disabled={disabled}
+      onMouseDown={(e) => e.preventDefault()}
+      onClick={onClick}
+    >
+      {children}
+    </Button>
+  );
+}
+
 export function MarkdownEditor({ value, onChange, rows = 8, placeholder, plain = false, imageFolder = 'portfolio/blogs' }: MarkdownEditorProps) {
   const [mode, setMode] = React.useState<'write' | 'preview'>('write');
   const [uploadingImage, setUploadingImage] = React.useState(false);
-  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
   const imageInputRef = React.useRef<HTMLInputElement>(null);
-  const insertPositionRef = React.useRef<{ start: number; end: number } | null>(null);
+  const lastEmittedMarkdown = React.useRef(value);
 
-  const insertAtCursor = (text: string) => {
-    const textarea = textareaRef.current;
-    const pos = insertPositionRef.current ?? {
-      start: textarea?.selectionStart ?? value.length,
-      end: textarea?.selectionEnd ?? value.length,
-    };
-    const nextValue = value.slice(0, pos.start) + text + value.slice(pos.end);
-    onChange(nextValue);
-    requestAnimationFrame(() => {
-      textarea?.focus();
-      const cursor = pos.start + text.length;
-      textarea?.setSelectionRange(cursor, cursor);
-    });
-  };
+  const editor = useEditor({
+    immediatelyRender: false,
+    extensions: [
+      StarterKit.configure({
+        heading: { levels: [1, 2, 3] },
+      }),
+      Underline,
+      Link.configure({ openOnClick: false, autolink: true }),
+      Image.configure({ inline: false }),
+      TextAlign.configure({ types: ['heading', 'paragraph'] }),
+      Markdown.configure({ html: false, tightLists: true, linkify: true }),
+    ],
+    content: value,
+    editorProps: {
+      attributes: {
+        class: cn(
+          'prose dark:prose-invert max-w-none focus:outline-none',
+          plain ? 'min-h-[60vh] text-lg leading-relaxed py-4' : 'min-h-[10rem] text-sm p-4'
+        ),
+      },
+    },
+    onUpdate: ({ editor }) => {
+      const markdown = editor.storage.markdown.getMarkdown();
+      lastEmittedMarkdown.current = markdown;
+      onChange(markdown);
+    },
+  });
 
-  const applyWrap = (option: WrapOption) => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selected = value.slice(start, end) || option.placeholder || '';
-    const after = option.after ?? '';
-
-    // Block-level markers (headings/lists/code fences) should start on their own line.
-    const needsLeadingNewline = option.block && start > 0 && value[start - 1] !== '\n';
-    const prefix = needsLeadingNewline ? '\n' : '';
-
-    const insertion = `${prefix}${option.before}${selected}${after}`;
-    const nextValue = value.slice(0, start) + insertion + value.slice(end);
-    onChange(nextValue);
-
-    requestAnimationFrame(() => {
-      textarea.focus();
-      const cursorStart = start + prefix.length + option.before.length;
-      const cursorEnd = cursorStart + selected.length;
-      textarea.setSelectionRange(cursorStart, cursorEnd);
-    });
-  };
-
-  const handleImageButtonClick = () => {
-    const textarea = textareaRef.current;
-    if (textarea) {
-      insertPositionRef.current = { start: textarea.selectionStart, end: textarea.selectionEnd };
+  React.useEffect(() => {
+    if (!editor) return;
+    if (value !== lastEmittedMarkdown.current) {
+      editor.commands.setContent(value);
+      lastEmittedMarkdown.current = value;
     }
-    imageInputRef.current?.click();
-  };
+  }, [value, editor]);
 
-  const handleImageSelected = async (file: File | undefined) => {
-    if (!file) return;
+  const insertImage = async (file: File | undefined) => {
+    if (!file || !editor) return;
     if (!file.type.startsWith('image/')) {
       toast.error('Please select an image file.');
       return;
@@ -129,7 +156,7 @@ export function MarkdownEditor({ value, onChange, rows = 8, placeholder, plain =
       }
       if (!response.ok) throw new Error(result.error || 'Upload failed');
 
-      insertAtCursor(`\n![${file.name.replace(/\.[^.]+$/, '')}](${result.url})\n`);
+      editor.chain().focus().setImage({ src: result.url, alt: file.name.replace(/\.[^.]+$/, '') }).run();
       toast.success('Image inserted');
     } catch (err: any) {
       toast.error(err.message || 'Image upload failed.');
@@ -139,78 +166,143 @@ export function MarkdownEditor({ value, onChange, rows = 8, placeholder, plain =
     }
   };
 
+  const setLink = () => {
+    if (!editor) return;
+    const previousUrl = editor.getAttributes('link').href;
+    const url = window.prompt('Link URL', previousUrl || 'https://');
+    if (url === null) return;
+    if (url === '') {
+      editor.chain().focus().extendMarkRange('link').unsetLink().run();
+      return;
+    }
+    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+  };
+
+  if (!editor) {
+    return (
+      <div className="flex items-center justify-center py-10 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className={plain ? '' : 'rounded-md border border-input bg-muted/10 overflow-hidden'}>
-      <div className={`flex items-center justify-between border-b bg-muted/20 px-2 py-1.5 ${plain ? 'sticky top-0 z-10 backdrop-blur' : ''}`}>
-        <div className="flex items-center gap-0.5">
-          {toolbarItems.map((item) => (
-            <Button
-              key={item.label}
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              title={item.label}
-              disabled={mode === 'preview'}
-              onClick={() => applyWrap(item)}
-            >
-              <item.icon className="h-3.5 w-3.5" />
-            </Button>
-          ))}
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            title="Insert image"
-            disabled={mode === 'preview' || uploadingImage}
-            onClick={handleImageButtonClick}
-          >
+      <div className={`flex flex-wrap items-center justify-between gap-1 border-b bg-muted/20 px-2 py-1.5 ${plain ? 'sticky top-0 z-10 backdrop-blur' : ''}`}>
+        <div className="flex flex-wrap items-center gap-0.5">
+          <ToolbarButton title="Heading 1" active={editor.isActive('heading', { level: 1 })} disabled={mode === 'preview'} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}>
+            <Heading1 className="h-3.5 w-3.5" />
+          </ToolbarButton>
+          <ToolbarButton title="Heading 2" active={editor.isActive('heading', { level: 2 })} disabled={mode === 'preview'} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>
+            <Heading2 className="h-3.5 w-3.5" />
+          </ToolbarButton>
+          <ToolbarButton title="Heading 3" active={editor.isActive('heading', { level: 3 })} disabled={mode === 'preview'} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}>
+            <Heading3 className="h-3.5 w-3.5" />
+          </ToolbarButton>
+
+          <span className="w-px h-4 bg-border mx-1" />
+
+          <ToolbarButton title="Bold" active={editor.isActive('bold')} disabled={mode === 'preview'} onClick={() => editor.chain().focus().toggleBold().run()}>
+            <Bold className="h-3.5 w-3.5" />
+          </ToolbarButton>
+          <ToolbarButton title="Italic" active={editor.isActive('italic')} disabled={mode === 'preview'} onClick={() => editor.chain().focus().toggleItalic().run()}>
+            <Italic className="h-3.5 w-3.5" />
+          </ToolbarButton>
+          <ToolbarButton title="Underline" active={editor.isActive('underline')} disabled={mode === 'preview'} onClick={() => editor.chain().focus().toggleUnderline().run()}>
+            <UnderlineIcon className="h-3.5 w-3.5" />
+          </ToolbarButton>
+          <ToolbarButton title="Strikethrough" active={editor.isActive('strike')} disabled={mode === 'preview'} onClick={() => editor.chain().focus().toggleStrike().run()}>
+            <Strikethrough className="h-3.5 w-3.5" />
+          </ToolbarButton>
+          <ToolbarButton title="Inline code" active={editor.isActive('code')} disabled={mode === 'preview'} onClick={() => editor.chain().focus().toggleCode().run()}>
+            <Code className="h-3.5 w-3.5" />
+          </ToolbarButton>
+
+          <span className="w-px h-4 bg-border mx-1" />
+
+          <ToolbarButton title="Bullet list" active={editor.isActive('bulletList')} disabled={mode === 'preview'} onClick={() => editor.chain().focus().toggleBulletList().run()}>
+            <List className="h-3.5 w-3.5" />
+          </ToolbarButton>
+          <ToolbarButton title="Numbered list" active={editor.isActive('orderedList')} disabled={mode === 'preview'} onClick={() => editor.chain().focus().toggleOrderedList().run()}>
+            <ListOrdered className="h-3.5 w-3.5" />
+          </ToolbarButton>
+          <ToolbarButton title="Quote" active={editor.isActive('blockquote')} disabled={mode === 'preview'} onClick={() => editor.chain().focus().toggleBlockquote().run()}>
+            <Quote className="h-3.5 w-3.5" />
+          </ToolbarButton>
+
+          <span className="w-px h-4 bg-border mx-1" />
+
+          <ToolbarButton title="Align left" active={editor.isActive({ textAlign: 'left' })} disabled={mode === 'preview'} onClick={() => editor.chain().focus().setTextAlign('left').run()}>
+            <AlignLeft className="h-3.5 w-3.5" />
+          </ToolbarButton>
+          <ToolbarButton title="Align center" active={editor.isActive({ textAlign: 'center' })} disabled={mode === 'preview'} onClick={() => editor.chain().focus().setTextAlign('center').run()}>
+            <AlignCenter className="h-3.5 w-3.5" />
+          </ToolbarButton>
+          <ToolbarButton title="Align right" active={editor.isActive({ textAlign: 'right' })} disabled={mode === 'preview'} onClick={() => editor.chain().focus().setTextAlign('right').run()}>
+            <AlignRight className="h-3.5 w-3.5" />
+          </ToolbarButton>
+
+          <span className="w-px h-4 bg-border mx-1" />
+
+          <ToolbarButton title="Link" active={editor.isActive('link')} disabled={mode === 'preview'} onClick={setLink}>
+            <LinkIcon className="h-3.5 w-3.5" />
+          </ToolbarButton>
+          <ToolbarButton title="Insert image" disabled={mode === 'preview' || uploadingImage} onClick={() => imageInputRef.current?.click()}>
             {uploadingImage ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ImageIcon className="h-3.5 w-3.5" />}
-          </Button>
+          </ToolbarButton>
           <input
             ref={imageInputRef}
             type="file"
             accept="image/*"
             className="hidden"
-            onChange={(e) => handleImageSelected(e.target.files?.[0])}
+            onChange={(e) => insertImage(e.target.files?.[0])}
           />
+
+          <span className="w-px h-4 bg-border mx-1" />
+
+          <ToolbarButton title="Undo" disabled={mode === 'preview'} onClick={() => editor.chain().focus().undo().run()}>
+            <Undo2 className="h-3.5 w-3.5" />
+          </ToolbarButton>
+          <ToolbarButton title="Redo" disabled={mode === 'preview'} onClick={() => editor.chain().focus().redo().run()}>
+            <Redo2 className="h-3.5 w-3.5" />
+          </ToolbarButton>
         </div>
+
         <div className="flex items-center gap-1">
-          <Button
-            type="button"
-            variant={mode === 'write' ? 'secondary' : 'ghost'}
-            size="sm"
-            className="h-7 gap-1 text-xs"
-            onClick={() => setMode('write')}
-          >
+          <Button type="button" variant={mode === 'write' ? 'secondary' : 'ghost'} size="sm" className="h-7 gap-1 text-xs" onClick={() => setMode('write')}>
             <Pencil className="h-3 w-3" /> Write
           </Button>
-          <Button
-            type="button"
-            variant={mode === 'preview' ? 'secondary' : 'ghost'}
-            size="sm"
-            className="h-7 gap-1 text-xs"
-            onClick={() => setMode('preview')}
-          >
+          <Button type="button" variant={mode === 'preview' ? 'secondary' : 'ghost'} size="sm" className="h-7 gap-1 text-xs" onClick={() => setMode('preview')}>
             <Eye className="h-3 w-3" /> Preview
           </Button>
         </div>
       </div>
 
       {mode === 'write' ? (
-        <Textarea
-          ref={textareaRef}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          rows={rows}
-          className={
-            plain
-              ? 'border-0 rounded-none bg-transparent font-sans text-lg leading-relaxed focus-visible:ring-0 px-0 min-h-[60vh] shadow-none'
-              : 'border-0 rounded-none bg-transparent font-mono text-sm focus-visible:ring-0'
-          }
-        />
+        <div className="relative">
+          <BubbleMenu editor={editor} className="flex items-center gap-0.5 rounded-md border border-border bg-popover shadow-md p-1">
+            <ToolbarButton title="Bold" active={editor.isActive('bold')} onClick={() => editor.chain().focus().toggleBold().run()}>
+              <Bold className="h-3.5 w-3.5" />
+            </ToolbarButton>
+            <ToolbarButton title="Italic" active={editor.isActive('italic')} onClick={() => editor.chain().focus().toggleItalic().run()}>
+              <Italic className="h-3.5 w-3.5" />
+            </ToolbarButton>
+            <ToolbarButton title="Underline" active={editor.isActive('underline')} onClick={() => editor.chain().focus().toggleUnderline().run()}>
+              <UnderlineIcon className="h-3.5 w-3.5" />
+            </ToolbarButton>
+            <ToolbarButton title="Strikethrough" active={editor.isActive('strike')} onClick={() => editor.chain().focus().toggleStrike().run()}>
+              <Strikethrough className="h-3.5 w-3.5" />
+            </ToolbarButton>
+            <ToolbarButton title="Inline code" active={editor.isActive('code')} onClick={() => editor.chain().focus().toggleCode().run()}>
+              <Code className="h-3.5 w-3.5" />
+            </ToolbarButton>
+            <ToolbarButton title="Link" active={editor.isActive('link')} onClick={setLink}>
+              <LinkIcon className="h-3.5 w-3.5" />
+            </ToolbarButton>
+          </BubbleMenu>
+
+          <EditorContent editor={editor} className={plain ? 'px-0' : ''} />
+        </div>
       ) : (
         <div className={plain ? 'py-4 min-h-[60vh]' : 'p-4 min-h-[10rem]'}>
           <MarkdownRenderer content={value} className="prose prose-sm dark:prose-invert max-w-none" />
