@@ -114,7 +114,7 @@ export function MarkdownEditor({ value, onChange, rows = 8, placeholder, plain =
       },
     },
     onUpdate: ({ editor }) => {
-      const markdown = editor.storage.markdown.getMarkdown();
+      const markdown = (editor.storage as any).markdown.getMarkdown();
       lastEmittedMarkdown.current = markdown;
       onChange(markdown);
     },
