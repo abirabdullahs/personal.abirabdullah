@@ -1,5 +1,6 @@
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 
 type MarkdownRendererProps = {
   content: string;
@@ -11,10 +12,15 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
     return <p className="text-muted-foreground italic">No content provided.</p>;
   }
 
+  // rehypeRaw renders HTML embedded in the Markdown (used for formatting with
+  // no pure-Markdown equivalent, e.g. text-align, underline, from the Tiptap
+  // editor). Safe here because blog content is only ever admin-authored
+  // behind auth — never untrusted user input.
   return (
     <div className={className ?? 'prose dark:prose-invert max-w-none prose-headings:font-bold prose-a:text-primary'}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeRaw]}
         components={{
           code({ className, children, ...props }) {
             const isInline = !className;

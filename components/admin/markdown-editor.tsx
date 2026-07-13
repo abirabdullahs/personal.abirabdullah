@@ -102,7 +102,7 @@ export function MarkdownEditor({ value, onChange, rows = 8, placeholder, plain =
       Link.configure({ openOnClick: false, autolink: true }),
       Image.configure({ inline: false }),
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
-      Markdown.configure({ html: false, tightLists: true, linkify: true }),
+      Markdown.configure({ html: true, tightLists: true, linkify: true }),
     ],
     content: value,
     editorProps: {
