@@ -170,7 +170,7 @@ function BlogPostPageClient({
   }
 
   return (
-    <article className="container max-w-[42rem] px-4 py-12 md:py-16 space-y-10">
+    <article className="container max-w-full px-4 py-12 md:py-16 space-y-10">
       <div className="space-y-6">
         <Link href="/blog">
           <Button variant="ghost" size="sm" className="-ml-3 text-muted-foreground hover:text-foreground">
