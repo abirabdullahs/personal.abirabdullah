@@ -59,7 +59,7 @@ export function PostsSection({ posts, projects, onAdd, onEdit, onDelete }: Posts
                         <Badge variant="outline">part of {linkedProject}</Badge>
                       )}
                     </div>
-                    <p className="mt-1 text-sm">{post.text}</p>
+                    <p className="mt-1 text-sm whitespace-pre-wrap">{post.text}</p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <Badge variant="outline">{post.visibility || 'public'}</Badge>
