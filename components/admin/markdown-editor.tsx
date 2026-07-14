@@ -187,7 +187,7 @@ export function MarkdownEditor({ value, onChange, rows = 8, placeholder, plain =
   }
 
   return (
-    <div className={plain ? '' : 'rounded-md border border-input bg-muted/10'}>
+   <div className={plain ? 'mt-3' : 'mt-3 rounded-md border border-input bg-muted/10'}>
       <div
         className={cn(
           'flex flex-wrap items-center justify-between gap-1 border-b bg-muted/20 px-2 py-1.5',
