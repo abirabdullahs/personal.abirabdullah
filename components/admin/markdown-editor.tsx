@@ -187,8 +187,14 @@ export function MarkdownEditor({ value, onChange, rows = 8, placeholder, plain =
   }
 
   return (
-    <div className={plain ? '' : 'rounded-md border border-input bg-muted/10 overflow-hidden'}>
-      <div className={`flex flex-wrap items-center justify-between gap-1 border-b bg-muted/20 px-2 py-1.5 ${plain ? 'sticky top-0 z-10 backdrop-blur' : ''}`}>
+    <div className={plain ? '' : 'rounded-md border border-input bg-muted/10'}>
+      <div
+        className={cn(
+          'flex flex-wrap items-center justify-between gap-1 border-b bg-muted/20 px-2 py-1.5',
+          'sticky top-0 z-10 backdrop-blur',
+          !plain && 'rounded-t-md'
+        )}
+      >
         <div className="flex flex-wrap items-center gap-0.5">
           <ToolbarButton title="Heading 1" active={editor.isActive('heading', { level: 1 })} disabled={mode === 'preview'} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}>
             <Heading1 className="h-3.5 w-3.5" />
