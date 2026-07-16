@@ -117,6 +117,7 @@ export default function AdminDashboard() {
   const [profileId, setProfileId] = React.useState<string | number | null>(null);
   const [adminName, setAdminName] = React.useState('Abir Abdullah');
   const [adminEmail, setAdminEmail] = React.useState('');
+  const [profileSeoName, setProfileSeoName] = React.useState('');
   const [profileHeadline, setProfileHeadline] = React.useState('');
   const [profileBio, setProfileBio] = React.useState('');
   const [profileAbout, setProfileAbout] = React.useState('');
@@ -683,6 +684,7 @@ export default function AdminDashboard() {
         setProfileId(row.id ?? null);
         setAdminName(row.name || '');
         setAdminEmail(row.email || '');
+        setProfileSeoName(row.seo_name || '');
         setProfileHeadline(row.headline || '');
         setProfileBio(row.bio || '');
         setProfileAbout(row.about || '');
@@ -716,6 +718,7 @@ export default function AdminDashboard() {
 
     const payload = {
       name: adminName,
+      seo_name: profileSeoName || null,
       headline: profileHeadline,
       bio: profileBio,
       about: profileAbout,
@@ -1556,6 +1559,14 @@ alter table contact_messages enable row level security;`}
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-muted-foreground uppercase">Display Name</label>
                         <Input value={adminName} onChange={(e) => setAdminName(e.target.value)} className="bg-background border-border" disabled={profileLoading} />
+                        <p className="text-[10px] text-muted-foreground">Shown on the site itself (hero, About, etc).</p>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-muted-foreground uppercase">SEO Name (optional)</label>
+                        <Input value={profileSeoName} onChange={(e) => setProfileSeoName(e.target.value)} placeholder="e.g. Abir Hossen Abdullah" className="bg-background border-border" disabled={profileLoading} />
+                        <p className="text-[10px] text-muted-foreground">
+                          Used for page titles &amp; search engines. If set, appears first — Display Name still follows in parentheses so both names stay searchable. Leave blank to just use Display Name.
+                        </p>
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-muted-foreground uppercase">Headline</label>

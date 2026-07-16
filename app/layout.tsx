@@ -32,19 +32,29 @@ const FALLBACK_DESCRIPTION = 'Personal portfolio of Abir Abdullah — full-stack
 export async function generateMetadata(): Promise<Metadata> {
   let title = FALLBACK_TITLE;
   let description = FALLBACK_DESCRIPTION;
+  let primaryName = 'Abir Abdullah';
 
   try {
     const hasSupabase = !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
     if (hasSupabase) {
       const client = getSupabase();
-      const { data } = await client.from('admin_public_profile').select('name, headline, bio').limit(1).maybeSingle();
+      const { data } = await client.from('admin_public_profile').select('name, seo_name, headline, bio').limit(1).maybeSingle();
 
       if (data) {
-        if (data.name && data.headline) {
-          title = `${data.name} — ${data.headline}`;
-        } else if (data.name) {
-          title = data.name;
-        }
+        // seo_name (e.g. "Abir Hossen Abdullah") is the primary, higher-weight
+        // name for search engines. The everyday display name (e.g.
+        // "Abir Abdullah") still gets included in the title so both names
+        // are searchable — it just carries less visual weight, appearing
+        // second and in parentheses.
+        const seoName = (data.seo_name || data.name || primaryName).trim();
+        const displayName = (data.name || primaryName).trim();
+        primaryName = seoName;
+
+        const nameForTitle = displayName && displayName.toLowerCase() !== seoName.toLowerCase()
+          ? `${seoName} (${displayName})`
+          : seoName;
+
+        title = data.headline ? `${nameForTitle} — ${data.headline}` : nameForTitle;
         if (data.bio) {
           description = data.bio;
         }
@@ -58,12 +68,12 @@ export async function generateMetadata(): Promise<Metadata> {
     metadataBase: new URL(siteUrl),
     title: {
       default: title,
-      template: `%s | ${title.split(' — ')[0]}`,
+      template: `%s | ${primaryName}`,
     },
     description,
     openGraph: {
       type: 'website',
-      siteName: title.split(' — ')[0],
+      siteName: primaryName,
       title,
       description,
     },
