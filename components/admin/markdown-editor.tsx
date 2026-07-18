@@ -31,8 +31,18 @@ import {
   Eye,
   Pencil,
   Loader2,
+  FileUp,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { MarkdownRenderer } from '@/components/markdown-renderer';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -54,6 +64,15 @@ function fileToDataUri(file: File): Promise<string> {
     reader.onload = () => resolve(reader.result as string);
     reader.onerror = () => reject(new Error('Could not read file.'));
     reader.readAsDataURL(file);
+  });
+}
+
+function fileToText(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error('Could not read file.'));
+    reader.readAsText(file);
   });
 }
 
@@ -90,6 +109,9 @@ export function MarkdownEditor({ value, onChange, rows = 8, placeholder, plain =
   const [mode, setMode] = React.useState<'write' | 'preview'>('write');
   const [uploadingImage, setUploadingImage] = React.useState(false);
   const imageInputRef = React.useRef<HTMLInputElement>(null);
+  const mdFileInputRef = React.useRef<HTMLInputElement>(null);
+  const [importDialogOpen, setImportDialogOpen] = React.useState(false);
+  const [importText, setImportText] = React.useState('');
   const lastEmittedMarkdown = React.useRef(value);
 
   const editor = useEditor({
@@ -163,6 +185,52 @@ export function MarkdownEditor({ value, onChange, rows = 8, placeholder, plain =
     } finally {
       setUploadingImage(false);
       if (imageInputRef.current) imageInputRef.current.value = '';
+    }
+  };
+
+  const applyImportedMarkdown = (markdownText: string) => {
+    if (!editor) return;
+    if (!markdownText.trim()) {
+      toast.error('Nothing to import — the file or pasted text was empty.');
+      return;
+    }
+
+    if (value.trim().length > 0) {
+      const confirmed = window.confirm('This will replace the current content. Continue?');
+      if (!confirmed) return;
+    }
+
+    editor.commands.setContent(markdownText);
+    // setContent parses+re-renders the doc; read the markdown back out so
+    // what's stored matches exactly what the editor now shows, and update
+    // the ref so the sync effect doesn't immediately overwrite it again.
+    const resynced = (editor.storage as any).markdown.getMarkdown();
+    lastEmittedMarkdown.current = resynced;
+    onChange(resynced);
+
+    setImportDialogOpen(false);
+    setImportText('');
+    toast.success('Content imported');
+  };
+
+  const handleImportFile = async (file: File | undefined) => {
+    if (!file) return;
+    const isMarkdownish = /\.(md|markdown|txt)$/i.test(file.name);
+    if (!isMarkdownish) {
+      toast.error('Please select a .md, .markdown, or .txt file.');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('File is too large (max 2MB).');
+      return;
+    }
+    try {
+      const text = await fileToText(file);
+      applyImportedMarkdown(text);
+    } catch (err: any) {
+      toast.error(err.message || 'Could not read that file.');
+    } finally {
+      if (mdFileInputRef.current) mdFileInputRef.current.value = '';
     }
   };
 
@@ -266,6 +334,12 @@ export function MarkdownEditor({ value, onChange, rows = 8, placeholder, plain =
 
           <span className="w-px h-4 bg-border mx-1" />
 
+          <ToolbarButton title="Import Markdown (file or paste)" disabled={mode === 'preview'} onClick={() => setImportDialogOpen(true)}>
+            <FileUp className="h-3.5 w-3.5" />
+          </ToolbarButton>
+
+          <span className="w-px h-4 bg-border mx-1" />
+
           <ToolbarButton title="Undo" disabled={mode === 'preview'} onClick={() => editor.chain().focus().undo().run()}>
             <Undo2 className="h-3.5 w-3.5" />
           </ToolbarButton>
@@ -314,6 +388,58 @@ export function MarkdownEditor({ value, onChange, rows = 8, placeholder, plain =
           <MarkdownRenderer content={value} className="prose prose-sm dark:prose-invert max-w-none" />
         </div>
       )}
+
+      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Import Markdown</DialogTitle>
+            <DialogDescription>
+              Replaces the current content with a Markdown file or pasted text. This can&apos;t be undone once you confirm.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <input
+                ref={mdFileInputRef}
+                type="file"
+                accept=".md,.markdown,.txt"
+                className="hidden"
+                onChange={(e) => handleImportFile(e.target.files?.[0])}
+              />
+              <Button type="button" variant="outline" className="w-full gap-2" onClick={() => mdFileInputRef.current?.click()}>
+                <FileUp className="h-4 w-4" /> Upload .md file
+              </Button>
+            </div>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center text-[10px] uppercase tracking-wider">
+                <span className="bg-background px-2 text-muted-foreground">or paste below</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Textarea
+                value={importText}
+                onChange={(e) => setImportText(e.target.value)}
+                placeholder="Paste Markdown content here..."
+                rows={10}
+                className="font-mono text-xs"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => setImportDialogOpen(false)}>Cancel</Button>
+            <Button type="button" onClick={() => applyImportedMarkdown(importText)} disabled={!importText.trim()}>
+              Import pasted text
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
