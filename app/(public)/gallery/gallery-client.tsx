@@ -28,24 +28,47 @@ async function fetchGalleryPage(
   return (data as PortfolioGalleryItem[]) || [];
 }
 
-function GalleryPageClient() {
-  const [images, setImages] = React.useState<PortfolioGalleryItem[]>([]);
-  const [albumCounts, setAlbumCounts] = React.useState<Record<string, number>>({});
-  const [totalCount, setTotalCount] = React.useState(0);
-  const [albums, setAlbums] = React.useState<PortfolioGalleryAlbum[]>([]);
+type GalleryPageClientProps = {
+  initialImages?: PortfolioGalleryItem[];
+  initialAlbums?: PortfolioGalleryAlbum[];
+  initialAlbumCounts?: Record<string, number>;
+  initialTotalCount?: number;
+};
+
+function GalleryPageClient({
+  initialImages = [],
+  initialAlbums = [],
+  initialAlbumCounts = {},
+  initialTotalCount = 0,
+}: GalleryPageClientProps) {
+  const [images, setImages] = React.useState<PortfolioGalleryItem[]>(initialImages);
+  const [albumCounts, setAlbumCounts] = React.useState<Record<string, number>>(initialAlbumCounts);
+  const [totalCount, setTotalCount] = React.useState(initialTotalCount);
+  const [albums, setAlbums] = React.useState<PortfolioGalleryAlbum[]>(initialAlbums);
   const [activeAlbum, setActiveAlbum] = React.useState<'all' | number | string>('all');
-  const [loading, setLoading] = React.useState(true);
+  const [loading, setLoading] = React.useState(initialImages.length === 0);
   const [loadingMore, setLoadingMore] = React.useState(false);
-  const [hasMore, setHasMore] = React.useState(true);
+  const [hasMore, setHasMore] = React.useState(initialImages.length === PAGE_SIZE || initialImages.length === 0);
   const [lightboxIndex, setLightboxIndex] = React.useState<number | null>(null);
   const hasSupabase = React.useMemo(() => checkSupabaseConfig(), []);
 
-  // Initial load: cached instant-paint + first page + albums + lightweight counts
+  // Initial load: the server component already fetched and rendered the
+  // first page (so search engine crawlers see real <img> tags immediately).
+  // This effect just keeps things fresh for a client that's been sitting on
+  // the page a while, and covers the case where the server-side fetch
+  // failed for some reason.
   React.useEffect(() => {
-    const storedImages = readStoredCollection<PortfolioGalleryItem[]>(portfolioStorageKeys.gallery, []);
-    const storedAlbums = readStoredCollection<PortfolioGalleryAlbum[]>(portfolioStorageKeys.galleryAlbums, []);
-    if (storedImages.length > 0) setImages(storedImages.slice(0, PAGE_SIZE));
-    setAlbums(storedAlbums);
+    if (initialImages.length > 0) {
+      localStorage.setItem(portfolioStorageKeys.gallery, JSON.stringify(initialImages));
+      if (initialAlbums.length > 0) {
+        localStorage.setItem(portfolioStorageKeys.galleryAlbums, JSON.stringify(initialAlbums));
+      }
+    } else {
+      const storedImages = readStoredCollection<PortfolioGalleryItem[]>(portfolioStorageKeys.gallery, []);
+      const storedAlbums = readStoredCollection<PortfolioGalleryAlbum[]>(portfolioStorageKeys.galleryAlbums, []);
+      if (storedImages.length > 0) setImages(storedImages.slice(0, PAGE_SIZE));
+      setAlbums(storedAlbums);
+    }
     setLoading(false);
 
     if (!hasSupabase) {
@@ -182,7 +205,7 @@ function GalleryPageClient() {
               >
                 <Image
                   src={image.url}
-                  alt={image.name}
+                  alt={image.caption ? `${image.name} — ${image.caption} — Abir Abdullah` : `${image.name} — Abir Abdullah`}
                   fill
                   className="object-cover transition-transform duration-500 group-hover:scale-110"
                   referrerPolicy="no-referrer"
