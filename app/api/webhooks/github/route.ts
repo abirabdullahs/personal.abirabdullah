@@ -13,8 +13,24 @@ function verifySignature(rawBody: string, signatureHeader: string | null, secret
   return crypto.timingSafeEqual(expectedBuf, actualBuf);
 }
 
-function normalizeRepoUrl(url: string): string {
-  return url.trim().toLowerCase().replace(/\.git$/, '').replace(/\/+$/, '');
+/**
+ * Extracts "owner/repo" (lowercase) from any reasonable way a GitHub repo
+ * URL might be written: https://github.com/owner/repo, with or without
+ * .git/trailing slash, http://, no protocol at all (github.com/owner/repo),
+ * www.github.com, or the SSH form git@github.com:owner/repo.git. Returns
+ * null if it doesn't look like a GitHub URL at all.
+ */
+function extractRepoPath(url: string): string | null {
+  if (!url) return null;
+  const cleaned = url.trim().toLowerCase();
+
+  const sshMatch = cleaned.match(/^git@github\.com:([^/]+\/[^/]+?)(\.git)?\/?$/);
+  if (sshMatch) return sshMatch[1];
+
+  const httpMatch = cleaned.match(/^(?:https?:\/\/)?(?:www\.)?github\.com\/([^/]+\/[^/]+?)(\.git)?\/?$/);
+  if (httpMatch) return httpMatch[1];
+
+  return null;
 }
 
 function buildPrompt(commits: any[], repoName: string): string {
@@ -150,7 +166,11 @@ export async function POST(request: Request) {
   try {
     const defaultBranch = payload.repository?.default_branch;
     if (defaultBranch && payload.ref !== `refs/heads/${defaultBranch}`) {
-      return NextResponse.json({ success: true, message: 'Ignored: push was not to the default branch.' });
+      return NextResponse.json({
+        success: true,
+        message: 'Ignored: push was not to the default branch.',
+        debug: { pushedRef: payload.ref, defaultBranch },
+      });
     }
 
     const commits = (payload.commits || []).filter((c: any) => !c.message?.startsWith('Merge '));
@@ -167,13 +187,27 @@ export async function POST(request: Request) {
     const { data: projects, error: projectsError } = await client.from('projects').select('*');
     if (projectsError) throw projectsError;
 
-    const normalizedIncoming = normalizeRepoUrl(repoUrl);
+    const incomingPath = extractRepoPath(repoUrl);
     const matchedProject = (projects || []).find(
-      (p: any) => p.github_repo && normalizeRepoUrl(p.github_repo) === normalizedIncoming
+      (p: any) => p.github_repo && extractRepoPath(p.github_repo) === incomingPath
+    );
+
+    console.log('GitHub webhook: incoming repo', repoUrl, '-> path', incomingPath);
+    console.log(
+      'GitHub webhook: tracked project repos ->',
+      (projects || []).map((p: any) => ({ name: p.name, github_repo: p.github_repo, path: extractRepoPath(p.github_repo) }))
     );
 
     if (!matchedProject) {
-      return NextResponse.json({ success: true, message: 'Repo is not linked to any tracked project — skipped.' });
+      return NextResponse.json({
+        success: true,
+        message: 'Repo is not linked to any tracked project — skipped.',
+        debug: {
+          incomingRepoUrl: repoUrl,
+          incomingRepoPath: incomingPath,
+          trackedProjectRepos: (projects || []).map((p: any) => ({ name: p.name, github_repo: p.github_repo })),
+        },
+      });
     }
 
     if (!process.env.OPENAI_API_KEY && !process.env.GEMINI_API_KEY) {

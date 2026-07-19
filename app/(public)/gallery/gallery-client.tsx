@@ -33,6 +33,7 @@ type GalleryPageClientProps = {
   initialAlbums?: PortfolioGalleryAlbum[];
   initialAlbumCounts?: Record<string, number>;
   initialTotalCount?: number;
+  ownerName?: string;
 };
 
 function GalleryPageClient({
@@ -40,6 +41,7 @@ function GalleryPageClient({
   initialAlbums = [],
   initialAlbumCounts = {},
   initialTotalCount = 0,
+  ownerName = 'Abir Abdullah',
 }: GalleryPageClientProps) {
   const [images, setImages] = React.useState<PortfolioGalleryItem[]>(initialImages);
   const [albumCounts, setAlbumCounts] = React.useState<Record<string, number>>(initialAlbumCounts);
@@ -205,7 +207,7 @@ function GalleryPageClient({
               >
                 <Image
                   src={image.url}
-                  alt={image.caption ? `${image.name} — ${image.caption} — Abir Abdullah` : `${image.name} — Abir Abdullah`}
+                  alt={image.caption ? `${image.name} — ${image.caption} — ${ownerName}` : `${image.name} — ${ownerName}`}
                   fill
                   className="object-cover transition-transform duration-500 group-hover:scale-110"
                   referrerPolicy="no-referrer"

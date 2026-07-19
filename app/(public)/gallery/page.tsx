@@ -18,13 +18,15 @@ export default async function GalleryPage() {
   let initialAlbums: PortfolioGalleryAlbum[] = [];
   let initialAlbumCounts: Record<string, number> = {};
   let initialTotalCount = 0;
+  let ownerName = 'Abir Abdullah';
 
   try {
     const client = getSupabase();
-    const [imagesRes, albumsRes, countsRes] = await Promise.all([
+    const [imagesRes, albumsRes, countsRes, profileRes] = await Promise.all([
       client.from('gallery').select('*').order('id', { ascending: false }).limit(PAGE_SIZE),
       client.from('gallery_albums').select('*').order('created_at', { ascending: false }),
       client.from('gallery').select('id, album_id'),
+      client.from('admin_public_profile').select('name, seo_name').limit(1).maybeSingle(),
     ]);
 
     if (imagesRes.data) initialImages = imagesRes.data as PortfolioGalleryItem[];
@@ -39,6 +41,9 @@ export default async function GalleryPage() {
       initialAlbumCounts = counts;
       initialTotalCount = countsRes.data.length;
     }
+    if (profileRes.data) {
+      ownerName = (profileRes.data.seo_name || profileRes.data.name || ownerName).trim();
+    }
   } catch (err) {
     console.warn('Gallery server-side fetch failed, client will retry:', err);
   }
@@ -49,7 +54,7 @@ export default async function GalleryPage() {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'ImageGallery',
-    name: "Abir Abdullah's Gallery",
+    name: `${ownerName}'s Gallery`,
     url: `${siteUrl}/gallery`,
     image: initialImages.map((img) => img.url),
   };
@@ -62,6 +67,7 @@ export default async function GalleryPage() {
         initialAlbums={initialAlbums}
         initialAlbumCounts={initialAlbumCounts}
         initialTotalCount={initialTotalCount}
+        ownerName={ownerName}
       />
     </>
   );
