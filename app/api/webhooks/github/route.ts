@@ -51,6 +51,19 @@ ${commitLines}
 Write a 2-4 sentence first-person update describing what was built, fixed, or changed. Plain text only — no markdown formatting, no hashtags, no emoji, no "Introducing..." style hype. Sound like a real developer casually noting progress. Preserve natural paragraph breaks if the update covers more than one distinct change.`;
 }
 
+/**
+ * Deterministic, no-AI fallback — used when both OpenAI and Gemini fail
+ * (out of quota, rate-limited, network issue, etc). Guarantees a post
+ * still gets created from the push instead of losing it entirely; it's
+ * just a plain commit list instead of an AI-written summary.
+ */
+function buildFallbackSummary(commits: any[], repoName: string): string {
+  const messages = commits.map((c) => c.message.split('\n')[0]).filter(Boolean);
+  const bullets = messages.map((m) => `- ${m}`).join('\n');
+  const plural = messages.length === 1 ? 'commit' : 'commits';
+  return `Pushed ${messages.length} ${plural} to ${repoName}:\n${bullets}`;
+}
+
 class QuotaExceededError extends Error {}
 
 async function summarizeWithOpenAI(prompt: string): Promise<string> {
@@ -110,28 +123,40 @@ async function summarizeWithGemini(prompt: string): Promise<string> {
 }
 
 /**
- * Tries OpenAI first; if it's specifically out of quota/rate-limited AND a
- * Gemini key is configured, falls back to Gemini instead of failing the
- * whole webhook. Any other kind of OpenAI failure (bad key, network error)
- * still surfaces normally rather than masking a real misconfiguration.
+ * Tries OpenAI first, falls back to Gemini if OpenAI is specifically out of
+ * quota/rate-limited, and falls back further to a plain-text commit list if
+ * every configured AI provider fails for any reason. This function never
+ * throws — there's always *some* summary to post, even under free-tier
+ * rate limits on every provider at once.
  */
-async function generateSummary(commits: any[], repoName: string): Promise<string> {
+async function generateSummary(commits: any[], repoName: string): Promise<{ text: string; source: 'openai' | 'gemini' | 'fallback' }> {
   const prompt = buildPrompt(commits, repoName);
+  const errors: string[] = [];
 
-  if (!process.env.OPENAI_API_KEY) {
-    if (!process.env.GEMINI_API_KEY) throw new Error('Neither OPENAI_API_KEY nor GEMINI_API_KEY is configured.');
-    return summarizeWithGemini(prompt);
-  }
-
-  try {
-    return await summarizeWithOpenAI(prompt);
-  } catch (err) {
-    if (err instanceof QuotaExceededError && process.env.GEMINI_API_KEY) {
-      console.warn('OpenAI quota exceeded, falling back to Gemini:', err.message);
-      return summarizeWithGemini(prompt);
+  if (process.env.OPENAI_API_KEY) {
+    try {
+      return { text: await summarizeWithOpenAI(prompt), source: 'openai' };
+    } catch (err: any) {
+      errors.push(`OpenAI: ${err.message}`);
+      if (!(err instanceof QuotaExceededError)) {
+        console.error('OpenAI failed (non-quota error):', err.message);
+      }
     }
-    throw err;
   }
+
+  if (process.env.GEMINI_API_KEY) {
+    try {
+      return { text: await summarizeWithGemini(prompt), source: 'gemini' };
+    } catch (err: any) {
+      errors.push(`Gemini: ${err.message}`);
+      console.error('Gemini failed:', err.message);
+    }
+  }
+
+  if (errors.length > 0) {
+    console.warn('All AI providers failed, using plain-text fallback summary:', errors.join(' | '));
+  }
+  return { text: buildFallbackSummary(commits, repoName), source: 'fallback' };
 }
 
 export async function POST(request: Request) {
@@ -211,11 +236,10 @@ export async function POST(request: Request) {
     }
 
     if (!process.env.OPENAI_API_KEY && !process.env.GEMINI_API_KEY) {
-      console.error('Neither OPENAI_API_KEY nor GEMINI_API_KEY is set — cannot summarize commit.');
-      return NextResponse.json({ error: 'No AI provider is configured.' }, { status: 500 });
+      console.warn('Neither OPENAI_API_KEY nor GEMINI_API_KEY is set — using plain-text fallback summary.');
     }
 
-    const summary = await generateSummary(commits, matchedProject.name);
+    const { text: summary, source } = await generateSummary(commits, matchedProject.name);
 
     const { error: insertError } = await client.from('posts').insert({
       text: summary,
@@ -226,7 +250,7 @@ export async function POST(request: Request) {
     });
     if (insertError) throw insertError;
 
-    return NextResponse.json({ success: true, project: matchedProject.name, postCreated: true });
+    return NextResponse.json({ success: true, project: matchedProject.name, postCreated: true, summarySource: source });
   } catch (err: any) {
     console.error('GitHub webhook processing failed:', err);
     return NextResponse.json({ error: err.message || 'Webhook processing failed.' }, { status: 500 });
