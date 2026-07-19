@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Loader2, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { optimizeCloudinaryUrl } from '@/lib/cloudinary-url';
 
 export type PendingGalleryItem = {
   name: string;
@@ -112,7 +113,7 @@ export function GalleryMultiUploader({ items, onChange, folder = 'portfolio/gall
           {items.map((item, index) => (
             <div key={`${item.url}-${index}`} className="space-y-1.5">
               <div className="relative aspect-square overflow-hidden rounded-md border border-border bg-muted">
-                <Image src={item.url} alt={item.name} fill className="object-cover" referrerPolicy="no-referrer" />
+                <Image src={optimizeCloudinaryUrl(item.url)} alt={item.name} fill className="object-cover" referrerPolicy="no-referrer" />
                 <button
                   type="button"
                   onClick={() => removeItem(index)}

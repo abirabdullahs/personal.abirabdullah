@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { PortfolioProject } from '@/lib/portfolio-data';
+import { optimizeCloudinaryUrl } from '@/lib/cloudinary-url';
 
 type ProjectSectionProps = {
   projects: PortfolioProject[];
@@ -36,7 +37,7 @@ export function ProjectSection({ projects, filteredProjects, onAdd, onEdit, onDe
             <Card key={project.id} className="flex h-full flex-col overflow-hidden border-border bg-card shadow-none transition-all duration-200 hover:border-primary/50">
               <div className="relative aspect-video w-full overflow-hidden bg-muted">
                 {project.image_url ? (
-                  <Image src={project.image_url} alt={project.name} fill className="object-cover transition-transform duration-300 group-hover:scale-105" />
+                  <Image src={optimizeCloudinaryUrl(project.image_url)} alt={project.name} fill className="object-cover transition-transform duration-300 group-hover:scale-105" />
                 ) : (
                   <div className="flex h-full items-center justify-center text-sm text-muted-foreground">No image</div>
                 )}

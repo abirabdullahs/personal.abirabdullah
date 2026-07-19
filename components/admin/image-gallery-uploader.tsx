@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Loader2, Upload, X, GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { optimizeCloudinaryUrl } from '@/lib/cloudinary-url';
 
 export type GalleryImageItem = {
   id?: number | string;
@@ -114,7 +115,7 @@ export function ImageGalleryUploader({ images, onChange, folder = 'portfolio', l
           {images.map((img, index) => (
             <div key={img.id ?? `new-${index}`} className="space-y-1.5">
               <div className="relative aspect-video overflow-hidden rounded-md border border-border bg-muted">
-                <Image src={img.image_url} alt={img.alt_text || ''} fill className="object-cover" referrerPolicy="no-referrer" />
+                <Image src={optimizeCloudinaryUrl(img.image_url)} alt={img.alt_text || ''} fill className="object-cover" referrerPolicy="no-referrer" />
                 <button
                   type="button"
                   onClick={() => removeImage(index)}

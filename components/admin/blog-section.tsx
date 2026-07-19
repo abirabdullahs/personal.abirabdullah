@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import type { PortfolioBlog } from '@/lib/portfolio-data';
+import { optimizeCloudinaryUrl } from '@/lib/cloudinary-url';
 
 type BlogSectionProps = {
   blogs: PortfolioBlog[];
@@ -37,7 +38,7 @@ export function BlogSection({ blogs, filteredBlogs, onAdd, onEdit, onDelete }: B
               <div className="flex flex-col sm:flex-row gap-4">
                 {blog.featured_image && (
                   <div className="relative w-full sm:w-32 aspect-video sm:aspect-square shrink-0 overflow-hidden rounded-md border border-border bg-muted">
-                    <Image src={blog.featured_image} alt={blog.title} fill className="object-cover" referrerPolicy="no-referrer" />
+                    <Image src={optimizeCloudinaryUrl(blog.featured_image)} alt={blog.title} fill className="object-cover" referrerPolicy="no-referrer" />
                   </div>
                 )}
 

@@ -6,6 +6,7 @@ import { Loader2, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { optimizeCloudinaryUrl } from '@/lib/cloudinary-url';
 
 type ImageUploaderProps = {
   value: string;
@@ -80,7 +81,7 @@ export function ImageUploader({ value, onChange, folder = 'portfolio', label = '
       <div className="flex items-center gap-3">
         {value ? (
           <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md border border-border bg-muted">
-            <Image src={value} alt="" fill className="object-cover" referrerPolicy="no-referrer" />
+            <Image src={optimizeCloudinaryUrl(value)} alt="" fill className="object-cover" referrerPolicy="no-referrer" />
             <button
               type="button"
               onClick={() => onChange('')}

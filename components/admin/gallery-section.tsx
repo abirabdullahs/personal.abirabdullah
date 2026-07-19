@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import type { PortfolioGalleryAlbum, PortfolioGalleryItem } from '@/lib/portfolio-data';
+import { optimizeCloudinaryUrl } from '@/lib/cloudinary-url';
 
 type GallerySectionProps = {
   gallery: PortfolioGalleryItem[];
@@ -104,7 +105,7 @@ export function GallerySection({ gallery, filteredGallery, albums, onAdd, onDele
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {visibleGallery.map((image) => (
             <Card key={image.id} className="group relative aspect-square overflow-hidden border border-border bg-card shadow-none">
-              <Image src={image.url} alt={image.name} fill className="object-cover transition-transform duration-200 group-hover:scale-105" />
+              <Image src={optimizeCloudinaryUrl(image.url)} alt={image.name} fill className="object-cover transition-transform duration-200 group-hover:scale-105" />
               <div className="absolute inset-0 flex flex-col justify-between bg-black/60 p-3 text-white opacity-0 transition-opacity group-hover:opacity-100">
                 <div className="flex justify-end">
                   <Button size="icon" variant="ghost" className="h-8 w-8 text-white hover:bg-white/20" onClick={() => onDelete(image.id, image.name)}>
