@@ -10,6 +10,7 @@ import { checkSupabaseConfig } from '@/lib/supabase-status';
 import { toast } from 'sonner';
 import { EmptyState } from '@/components/empty-state';
 import { portfolioStorageKeys, readStoredCollection, type PortfolioProject } from '@/lib/portfolio-data';
+import { optimizeCloudinaryUrl } from '@/lib/cloudinary-url';
 
 function ProjectDescription({ text }: { text?: string }) {
   const [expanded, setExpanded] = React.useState(false);
@@ -117,7 +118,7 @@ function ProjectsPageClient() {
               <Link href={`/projects/${project.slug}`} className="block">
                 <div className="relative aspect-video overflow-hidden border border-border bg-muted">
                   <Image
-                    src={project.image_url || '/placeholder.svg'}
+                    src={optimizeCloudinaryUrl(project.image_url) || '/placeholder.svg'}
                     alt={project.name}
                     fill
                     className="object-cover transition-transform duration-500 group-hover:scale-105"

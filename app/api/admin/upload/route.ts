@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { uploadImage } from '@/lib/cloudinary';
+import { optimizeCloudinaryUrl } from '@/lib/cloudinary-url';
 
 const MAX_BYTES = 3 * 1024 * 1024; // 3MB raw — base64 inflates ~37%, and Vercel's serverless
 // function body limit is 4.5MB, so this keeps requests safely under that.
@@ -32,7 +33,7 @@ export async function POST(request: Request) {
     }
 
     const url = await uploadImage(image, folder);
-    return NextResponse.json({ success: true, url });
+    return NextResponse.json({ success: true, url: optimizeCloudinaryUrl(url) });
   } catch (error: any) {
     console.error('Image upload failed:', error);
     return NextResponse.json({ error: error?.message || 'Image upload failed.' }, { status: 500 });

@@ -15,6 +15,7 @@ import { EmptyState } from '@/components/empty-state';
 import { GithubActivityFeed } from '@/components/github-activity-feed';
 import { toast } from 'sonner';
 import { getSupabase } from '@/lib/supabase';
+import { optimizeCloudinaryUrl } from '@/lib/cloudinary-url';
 import { checkSupabaseConfig } from '@/lib/supabase-status';
 import {
   portfolioStorageKeys,
@@ -106,7 +107,7 @@ export default function HomePage() {
             >
               {profile.avatar ? (
                 <img
-                  src={profile.avatar}
+                  src={optimizeCloudinaryUrl(profile.avatar)}
                   alt={profile.name}
                   referrerPolicy="no-referrer"
                   className="w-64 sm:w-80 lg:w-full lg:max-w-md h-auto rounded-xl shadow-[0_30px_70px_-25px_rgba(0,0,0,0.3)] dark:shadow-[0_30px_70px_-25px_rgba(0,0,0,0.7)]"
@@ -236,7 +237,7 @@ export default function HomePage() {
                 {project.image_url ? (
                   <div className="relative h-56 w-full overflow-hidden bg-muted">
                     <Image
-                      src={project.image_url}
+                      src={optimizeCloudinaryUrl(project.image_url)}
                       alt={project.name}
                       fill
                       className="object-cover transition-transform duration-300 hover:scale-105"
@@ -280,7 +281,7 @@ export default function HomePage() {
                   <CardHeader className="flex-row items-center gap-4 space-y-0">
                     {venture.logo_url ? (
                       <div className="relative h-14 w-14 shrink-0 overflow-hidden border border-border">
-                        <Image src={venture.logo_url} alt={`${venture.name} logo`} fill className="object-cover" referrerPolicy="no-referrer" />
+                        <Image src={optimizeCloudinaryUrl(venture.logo_url)} alt={`${venture.name} logo`} fill className="object-cover" referrerPolicy="no-referrer" />
                       </div>
                     ) : (
                       <div className="h-14 w-14 shrink-0 flex items-center justify-center bg-foreground text-background font-serif text-2xl">
@@ -369,7 +370,7 @@ export default function HomePage() {
                   {blog.featured_image ? (
                     <div className="relative h-48 w-full overflow-hidden bg-muted">
                       <Image
-                        src={blog.featured_image}
+                        src={optimizeCloudinaryUrl(blog.featured_image)}
                         alt={blog.title}
                         fill
                         className="object-cover transition-transform duration-300 hover:scale-105"

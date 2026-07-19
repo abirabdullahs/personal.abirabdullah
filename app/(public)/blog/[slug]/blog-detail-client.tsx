@@ -7,6 +7,7 @@ import { ArrowLeft, Clock, Calendar, Tag, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { getSupabase } from '@/lib/supabase';
+import { optimizeCloudinaryUrl } from '@/lib/cloudinary-url';
 import { checkSupabaseConfig } from '@/lib/supabase-status';
 import { toast } from 'sonner';
 import { MarkdownRenderer } from '@/components/markdown-renderer';
@@ -209,7 +210,7 @@ function BlogPostPageClient({
       {blog.featured_image && (
         <div className="relative aspect-video overflow-hidden border border-border bg-muted">
           <Image
-            src={blog.featured_image}
+            src={optimizeCloudinaryUrl(blog.featured_image)}
             alt={blog.title}
             fill
             className="object-cover"
@@ -233,7 +234,7 @@ function BlogPostPageClient({
                 {post.featured_image && (
                   <div className="relative aspect-video overflow-hidden border border-border bg-muted mb-3">
                     <Image
-                      src={post.featured_image}
+                      src={optimizeCloudinaryUrl(post.featured_image)}
                       alt={post.title}
                       fill
                       className="object-cover transition-transform duration-500 group-hover:scale-105"

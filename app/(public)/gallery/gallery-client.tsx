@@ -7,6 +7,7 @@ import { Loader2, ImageOff } from "lucide-react";
 import Image from "next/image";
 import { getSupabase } from '@/lib/supabase';
 import { checkSupabaseConfig } from '@/lib/supabase-status';
+import { optimizeCloudinaryUrl } from '@/lib/cloudinary-url';
 import { toast } from 'sonner';
 import { EmptyState } from '@/components/empty-state';
 import { GalleryLightbox } from '@/components/gallery-lightbox';
@@ -206,7 +207,7 @@ function GalleryPageClient({
                 className="group relative aspect-square overflow-hidden border border-border bg-muted cursor-pointer"
               >
                 <Image
-                  src={image.url}
+                  src={optimizeCloudinaryUrl(image.url)}
                   alt={image.caption ? `${image.name} — ${image.caption} — ${ownerName}` : `${image.name} — ${ownerName}`}
                   fill
                   className="object-cover transition-transform duration-500 group-hover:scale-110"

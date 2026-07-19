@@ -1,6 +1,7 @@
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
+import { optimizeCloudinaryUrl } from '@/lib/cloudinary-url';
 
 type MarkdownRendererProps = {
   content: string;
@@ -45,6 +46,10 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
                 {children}
               </a>
             );
+          },
+          img({ src, alt, ...props }) {
+            // eslint-disable-next-line @next/next/no-img-element
+            return <img src={optimizeCloudinaryUrl(typeof src === 'string' ? src : '')} alt={alt || ''} {...props} />;
           },
         }}
       >

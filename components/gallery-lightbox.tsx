@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Download, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { optimizeCloudinaryUrl } from '@/lib/cloudinary-url';
 
 export type LightboxImage = {
   id: number | string;
@@ -81,7 +82,7 @@ export function GalleryLightbox({ images, index, onOpenChange, onNavigate }: Gal
           <div className="relative bg-background border border-border">
             <div className="relative w-full aspect-[4/3] sm:aspect-video bg-black">
               <Image
-                src={image.url}
+                src={optimizeCloudinaryUrl(image.url)}
                 alt={image.name}
                 fill
                 className="object-contain"

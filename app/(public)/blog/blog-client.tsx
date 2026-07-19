@@ -7,6 +7,7 @@ import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { getSupabase } from '@/lib/supabase';
+import { optimizeCloudinaryUrl } from '@/lib/cloudinary-url';
 import { checkSupabaseConfig } from '@/lib/supabase-status';
 import { toast } from 'sonner';
 import { portfolioStorageKeys, readStoredCollection, type PortfolioBlog } from '@/lib/portfolio-data';
@@ -153,7 +154,7 @@ function BlogPageClient() {
                     {blog.featured_image && (
                       <div className="relative w-full sm:w-40 aspect-video sm:aspect-square shrink-0 overflow-hidden border border-border bg-muted">
                         <Image
-                          src={blog.featured_image}
+                          src={optimizeCloudinaryUrl(blog.featured_image)}
                           alt={blog.title}
                           fill
                           className="object-cover transition-transform duration-500 group-hover:scale-105"

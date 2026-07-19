@@ -10,6 +10,7 @@ import { ArrowLeft, ExternalLink, Github, Loader2 } from 'lucide-react';
 import { getSupabase } from '@/lib/supabase';
 import { checkSupabaseConfig } from '@/lib/supabase-status';
 import { toast } from 'sonner';
+import { optimizeCloudinaryUrl } from '@/lib/cloudinary-url';
 import { ShareButton } from '@/components/share-button';
 import { portfolioStorageKeys, readStoredCollection, type PortfolioPost, type PortfolioProject } from '@/lib/portfolio-data';
 import { technologies } from '@/data/technologies';
@@ -174,7 +175,7 @@ function ProjectDetailPageClient() {
           {gallery.map((img) => (
             <div key={img.id} className="relative aspect-video overflow-hidden border border-border bg-muted">
               <Image
-                src={img.image_url}
+                src={optimizeCloudinaryUrl(img.image_url)}
                 alt={img.alt_text || project.name}
                 fill
                 className="object-cover"
