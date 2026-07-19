@@ -20,6 +20,14 @@ export async function POST(request: Request) {
         if (error) throw error;
         return NextResponse.json({ success: true, data });
       }
+      case 'createMany': {
+        if (!Array.isArray(body.payload) || body.payload.length === 0) {
+          return NextResponse.json({ error: 'payload must be a non-empty array for createMany.' }, { status: 400 });
+        }
+        const { data, error } = await client.from(tableName).insert(body.payload).select('*');
+        if (error) throw error;
+        return NextResponse.json({ success: true, data });
+      }
       case 'update': {
         const { data, error } = await client.from(tableName).update(body.payload).eq('id', body.id).select('*').single();
         if (error) throw error;

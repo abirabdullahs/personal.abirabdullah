@@ -39,6 +39,7 @@ import { MessagesSection } from '@/components/admin/messages-section';
 import { GallerySection } from '@/components/admin/gallery-section';
 import { ImageUploader } from '@/components/admin/image-uploader';
 import { ImageGalleryUploader, type GalleryImageItem } from '@/components/admin/image-gallery-uploader';
+import { GalleryMultiUploader, type PendingGalleryItem } from '@/components/admin/gallery-multi-uploader';
 import { toast } from "sonner";
 import { useRouter } from 'next/navigation';
 import { getSupabase } from '@/lib/supabase';
@@ -103,8 +104,7 @@ export default function AdminDashboard() {
   const [projGalleryLoading, setProjGalleryLoading] = React.useState(false);
 
   // Gallery form states
-  const [galName, setGalName] = React.useState('');
-  const [galUrl, setGalUrl] = React.useState('');
+  const [galPendingItems, setGalPendingItems] = React.useState<PendingGalleryItem[]>([]);
   const [galAlbumId, setGalAlbumId] = React.useState<string>('');
 
   // Post form states
@@ -536,49 +536,45 @@ export default function AdminDashboard() {
 
   // GALLERY CRUD
   const openAddGallery = () => {
-    setGalName('');
-    setGalUrl('');
+    setGalPendingItems([]);
     setGalAlbumId('');
     setIsGalleryModalOpen(true);
   };
 
   const handleSaveGallery = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!galName || !galUrl) {
-      toast.error("Please fill in all gallery fields");
+    if (galPendingItems.length === 0) {
+      toast.error('Please select at least one image to upload.');
       return;
     }
 
-    const targetId: number | string = Date.now();
-    const basePayload = {
-      id: targetId,
-      name: galName,
-      url: galUrl,
+    const newItems = galPendingItems.map((item, index) => ({
+      id: Date.now() + index,
+      name: item.name || 'Untitled',
+      url: item.url,
       album_id: galAlbumId || null,
-    };
+    }));
 
     try {
       if (dbStatus === 'connected') {
         const response = await fetch('/api/admin/crud', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'create', table: 'gallery', payload: basePayload }),
+          body: JSON.stringify({ action: 'createMany', table: 'gallery', payload: newItems }),
         });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || 'Gallery save failed');
       }
 
-      const newImg = basePayload;
-
-      const updated = [newImg, ...gallery];
+      const updated = [...newItems, ...gallery];
       setGallery(updated);
       writeStoredCollection(portfolioStorageKeys.adminGallery, updated);
-      toast.success("Image uploaded to gallery");
-      logActivity(`Added image "${galName}" to gallery`);
+      toast.success(`${newItems.length} image(s) added to gallery`);
+      logActivity(`Added ${newItems.length} image(s) to gallery`);
       setIsGalleryModalOpen(false);
     } catch (err: any) {
       console.error("Gallery save failed:", err);
-      toast.error(err.message || 'Unable to save gallery image');
+      toast.error(err.message || 'Unable to save gallery images');
     }
   };
 
@@ -1720,18 +1716,14 @@ alter table contact_messages enable row level security;`}
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-background border border-border w-full max-w-md rounded-xl shadow-xl overflow-hidden animate-in fade-in-50 zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
             <div className="bg-muted/40 px-6 py-4 border-b flex justify-between items-center shrink-0">
-              <h2 className="font-extrabold tracking-tight text-lg">Add Gallery Image</h2>
+              <h2 className="font-extrabold tracking-tight text-lg">Add Gallery Images</h2>
               <Button size="icon" variant="ghost" onClick={() => setIsGalleryModalOpen(false)} className="h-8 w-8 text-muted-foreground hover:text-foreground">✕</Button>
             </div>
             <form onSubmit={handleSaveGallery} className="flex flex-col flex-1 min-h-0">
               <div className="p-6 space-y-4 overflow-y-auto flex-1 min-h-0">
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase text-muted-foreground">Image Label / Title</label>
-                <Input value={galName} onChange={(e) => setGalName(e.target.value)} placeholder="Landscape Setup" required className="bg-muted/10" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase text-muted-foreground">Image</label>
-                <ImageUploader value={galUrl} onChange={setGalUrl} folder="portfolio/gallery" label="Gallery image" />
+                <label className="text-xs font-bold uppercase text-muted-foreground">Images</label>
+                <GalleryMultiUploader items={galPendingItems} onChange={setGalPendingItems} folder="portfolio/gallery" />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase text-muted-foreground">Album (optional)</label>
@@ -1749,7 +1741,9 @@ alter table contact_messages enable row level security;`}
               </div>
               <div className="flex justify-end gap-2 p-4 border-t bg-background shrink-0">
                 <Button type="button" variant="ghost" className="text-xs" onClick={() => setIsGalleryModalOpen(false)}>Cancel</Button>
-                <Button type="submit" className="text-xs">Add Image</Button>
+                <Button type="submit" className="text-xs">
+                  {galPendingItems.length > 0 ? `Add ${galPendingItems.length} Image${galPendingItems.length > 1 ? 's' : ''}` : 'Add Images'}
+                </Button>
               </div>
             </form>
           </div>
