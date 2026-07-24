@@ -159,7 +159,7 @@ export default function AdminDashboard() {
     const storedProfile = readStoredCollection<PortfolioProfile | null>(portfolioStorageKeys.profile, null);
     if (storedProfile) {
       setAdminName(storedProfile.name || 'Abir Abdullah');
-      setAdminEmail(storedProfile.email || 'personal.abirabdullah@gmail.com');
+      setAdminEmail(storedProfile.email || 'abirabdullah.dev@gmail.com');
     } else {
       const defaults = createDefaultProfile();
       setAdminName(defaults.name);

@@ -165,7 +165,7 @@ export function createDefaultProfile(): PortfolioProfile {
   return {
     name: 'Abir Abdullah',
     role: 'Administrator',
-    email: 'personal.abirabdullah@gmail.com',
+    email: 'abirabdullah.dev@gmail.com',
     password: 'abir123456',
   };
 }

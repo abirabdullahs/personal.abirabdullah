@@ -35,7 +35,7 @@ export default function LoginPage() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: "abirabdullah3491@gmail.com",
+      email: "abirabdullah.dev@gmail.com",
       password: "",
     },
   });
@@ -93,7 +93,7 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="personal.abirabdullah@gmail.com" {...field} />
+                      <Input placeholder="abirabdullah.dev@gmail.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
