@@ -1,7 +1,15 @@
 import type { MetadataRoute } from 'next';
 import { getSupabase } from '@/lib/supabase';
+import { optimizeCloudinaryUrl } from '@/lib/cloudinary-url';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.abirabdullah.me';
+
+// Without this, Next.js bakes sitemap.xml as a static snapshot at build
+// time — any gallery/project/blog images added afterward (through the
+// admin panel, with no new code deploy) would never show up in the
+// sitemap Google actually reads. Revalidating hourly keeps it in sync
+// with the database without needing a fresh deploy for every content change.
+export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: MetadataRoute.Sitemap = [
@@ -29,7 +37,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: p.created_at ? new Date(p.created_at) : undefined,
       changeFrequency: 'monthly',
       priority: 0.6,
-      images: p.image_url ? [p.image_url] : undefined,
+      images: p.image_url ? [optimizeCloudinaryUrl(p.image_url)] : undefined,
     }));
 
     const blogRoutes: MetadataRoute.Sitemap = (blogs || []).map((b: any) => ({
@@ -37,7 +45,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: b.published_at ? new Date(b.published_at) : undefined,
       changeFrequency: 'monthly',
       priority: 0.6,
-      images: b.featured_image ? [b.featured_image] : undefined,
+      images: b.featured_image ? [optimizeCloudinaryUrl(b.featured_image)] : undefined,
     }));
 
     const galleryRoute: MetadataRoute.Sitemap = [
@@ -45,7 +53,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         url: `${siteUrl}/gallery`,
         changeFrequency: 'monthly',
         priority: 0.5,
-        images: (galleryImages || []).map((img: any) => img.url).filter(Boolean),
+        images: (galleryImages || []).map((img: any) => optimizeCloudinaryUrl(img.url)).filter(Boolean),
       },
     ];
 
