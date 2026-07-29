@@ -27,14 +27,14 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
             const isInline = !className;
             if (isInline) {
               return (
-                <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm" {...props}>
+                <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm text-foreground" {...props}>
                   {children}
                 </code>
               );
             }
             return (
-              <pre className="overflow-x-auto rounded-lg border bg-muted p-4 font-mono text-sm">
-                <code className={className} {...props}>
+              <pre className="overflow-x-auto rounded-lg border bg-muted p-4 font-mono text-sm text-foreground">
+                <code className={`${className || ''} text-foreground`} {...props}>
                   {children}
                 </code>
               </pre>
