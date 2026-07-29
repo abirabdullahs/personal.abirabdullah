@@ -1,7 +1,12 @@
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
+import rehypeHighlight from 'rehype-highlight';
 import { optimizeCloudinaryUrl } from '@/lib/cloudinary-url';
+// VS Code's dark editor color scheme (#1E1E1E background, #DCDCDC text) for
+// fenced code blocks. Imported once here so code blocks always look the
+// same regardless of the site's light/dark theme.
+import 'highlight.js/styles/vs2015.css';
 
 type MarkdownRendererProps = {
   content: string;
@@ -16,12 +21,14 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
   // rehypeRaw renders HTML embedded in the Markdown (used for formatting with
   // no pure-Markdown equivalent, e.g. text-align, underline, from the Tiptap
   // editor). Safe here because blog content is only ever admin-authored
-  // behind auth — never untrusted user input.
+  // behind auth — never untrusted user input. rehypeHighlight runs after it
+  // so fenced code blocks get real syntax-highlighted tokens (keywords,
+  // strings, comments, etc.), not just a flat text color.
   return (
     <div className={className ?? 'prose dark:prose-invert max-w-none prose-headings:font-bold prose-a:text-primary'}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeRaw]}
+        rehypePlugins={[rehypeRaw, rehypeHighlight]}
         components={{
           code({ className, children, ...props }) {
             const isInline = !className;
@@ -32,9 +39,14 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
                 </code>
               );
             }
+            // No color/background utility classes here on purpose — the
+            // imported vs2015.css theme (via the "hljs" class rehypeHighlight
+            // adds automatically) supplies the fixed dark background,
+            // padding, and per-token syntax colors. Only structural classes
+            // (rounded corners, border, horizontal overflow) live here.
             return (
-              <pre className="overflow-x-auto rounded-lg border bg-muted p-4 font-mono text-sm text-foreground">
-                <code className={`${className || ''} text-foreground`} {...props}>
+              <pre className="overflow-hidden rounded-lg border border-border">
+                <code className={className} {...props}>
                   {children}
                 </code>
               </pre>
