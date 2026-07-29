@@ -26,12 +26,6 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="border-b border-border">
-        <div className="container flex h-7 items-center justify-between px-4 font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
-          <span>— Abir Abdullah / Engineering Journal</span>
-          <span className="hidden sm:inline">Est. 2026</span>
-        </div>
-      </div>
-      <div className="border-b border-border">
       <div className="container flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center space-x-2">
           <span className="text-xl font-heading font-semibold tracking-tight">Portfolio</span>

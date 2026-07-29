@@ -175,7 +175,7 @@ export function createDefaultSiteProfile(): SiteAdminProfile {
     name: 'Abir Abdullah',
     headline: 'Full-Stack Developer',
     bio: "A Full-Stack Developer specializing in high-performance web applications. I bridge the gap between complex backend logic and sleek, intuitive user interfaces.",
-    avatar: 'https://picsum.photos/seed/admin/400/400',
+    avatar: '/images/png.png',
   };
 }
 

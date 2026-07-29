@@ -63,7 +63,6 @@ export function Footer() {
 
         <div className="border-t border-border pt-6 flex flex-col md:flex-row items-center justify-between gap-2 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
           <span>© {year} Abir Abdullah. All rights reserved.</span>
-          <span>— Engineering Journal</span>
         </div>
       </div>
     </footer>
