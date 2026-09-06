@@ -13,6 +13,8 @@ import { experiences } from '@/data/experiences';
 import { ventures } from '@/data/ventures';
 import { EmptyState } from '@/components/empty-state';
 import { GithubActivityFeed } from '@/components/github-activity-feed';
+import { SectionReveal } from '@/components/section-reveal';
+import { HeroAurora } from '@/components/hero-aurora';
 import { toast } from 'sonner';
 import { getSupabase } from '@/lib/supabase';
 import { optimizeCloudinaryUrl } from '@/lib/cloudinary-url';
@@ -95,7 +97,8 @@ export default function HomePage() {
   return (
     <div className="flex flex-col gap-20 pb-20">
       {/* Hero Section — editorial: image left, text right, hairline divider, serif display */}
-      <section className="relative border-b border-border/70">
+      <section className="relative overflow-hidden border-b border-border/70">
+        <HeroAurora />
         <div className="mx-auto max-w-7xl px-4 py-20 md:px-6 md:py-28 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)] gap-10 xl:gap-24 items-center">
             {/* Portrait */}
@@ -174,10 +177,10 @@ export default function HomePage() {
 
       {/* Quick Stats/Summary */}
       <section className="container px-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-border border-y border-border">
-          <Card className="rounded-none border-0 shadow-none">
+        <SectionReveal className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-border border-y border-border">
+          <Card className="group rounded-none border-0 shadow-none transition-all duration-200 hover:bg-accent/30 hover:-translate-y-0.5">
             <CardHeader>
-              <Code className="h-6 w-6 text-primary mb-2" strokeWidth={1.5} />
+              <Code className="h-6 w-6 text-primary mb-2 transition-transform duration-200 group-hover:scale-110" strokeWidth={1.5} />
               <CardTitle className="font-serif text-2xl font-normal">Projects</CardTitle>
               <CardDescription>Check out my latest work</CardDescription>
             </CardHeader>
@@ -189,9 +192,9 @@ export default function HomePage() {
               </Link>
             </CardContent>
           </Card>
-          <Card className="rounded-none border-0 shadow-none">
+          <Card className="group rounded-none border-0 shadow-none transition-all duration-200 hover:bg-accent/30 hover:-translate-y-0.5">
             <CardHeader>
-              <BookOpen className="h-6 w-6 text-primary mb-2" strokeWidth={1.5} />
+              <BookOpen className="h-6 w-6 text-primary mb-2 transition-transform duration-200 group-hover:scale-110" strokeWidth={1.5} />
               <CardTitle className="font-serif text-2xl font-normal">Blog</CardTitle>
               <CardDescription>Thoughts on tech and development</CardDescription>
             </CardHeader>
@@ -203,9 +206,9 @@ export default function HomePage() {
               </Link>
             </CardContent>
           </Card>
-          <Card className="rounded-none border-0 shadow-none">
+          <Card className="group rounded-none border-0 shadow-none transition-all duration-200 hover:bg-accent/30 hover:-translate-y-0.5">
             <CardHeader>
-              <ImageIcon className="h-6 w-6 text-primary mb-2" strokeWidth={1.5} />
+              <ImageIcon className="h-6 w-6 text-primary mb-2 transition-transform duration-200 group-hover:scale-110" strokeWidth={1.5} />
               <CardTitle className="font-serif text-2xl font-normal">Gallery</CardTitle>
               <CardDescription>Capturing moments and achievements</CardDescription>
             </CardHeader>
@@ -217,12 +220,13 @@ export default function HomePage() {
               </Link>
             </CardContent>
           </Card>
-        </div>
+        </SectionReveal>
       </section>
 
       {/* Featured Projects (DB-driven) */}
       {!loading && featuredProjects.length > 0 && (
         <section className="container px-4">
+          <SectionReveal>
           <div className="flex items-end justify-between mb-8 border-b border-border pb-4">
             <h2 className="font-serif text-3xl tracking-tight">Featured Projects</h2>
             <Link href="/projects">
@@ -233,7 +237,7 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {featuredProjects.map((project) => (
-              <Card key={project.id} className="overflow-hidden border-border bg-background shadow-sm">
+              <Card key={project.id} className="overflow-hidden border-border bg-background shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-primary/40">
                 {project.image_url ? (
                   <div className="relative h-56 w-full overflow-hidden bg-muted">
                     <Image
@@ -264,6 +268,7 @@ export default function HomePage() {
               </Card>
             ))}
           </div>
+          </SectionReveal>
         </section>
       )}
 
@@ -271,13 +276,14 @@ export default function HomePage() {
           as "founder/builder work" rather than a code project. */}
       {ventures.length > 0 && (
         <section className="container px-4">
+          <SectionReveal>
           <div className="flex items-end justify-between mb-8 border-b border-border pb-4">
             <h2 className="font-serif text-3xl tracking-tight">Also Building</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {ventures.map((venture) => {
               const CardInner = (
-                <Card className="h-full rounded-none border-border hover:border-foreground/40 transition-colors">
+                <Card className="h-full rounded-none border-border transition-all duration-300 hover:border-primary/40 hover:-translate-y-1 hover:shadow-md">
                   <CardHeader className="flex-row items-center gap-4 space-y-0">
                     {venture.logo_url ? (
                       <div className="relative h-14 w-14 shrink-0 overflow-hidden border border-border">
@@ -316,12 +322,14 @@ export default function HomePage() {
               );
             })}
           </div>
+          </SectionReveal>
         </section>
       )}
 
       {/* Latest Posts (DB-driven) */}
       {!loading && latestPosts.length > 0 && (
         <section className="container px-4">
+          <SectionReveal>
           <div className="flex items-end justify-between mb-8 border-b border-border pb-4">
             <h2 className="font-serif text-3xl tracking-tight">Latest Updates</h2>
             <Link href="/posts">
@@ -332,7 +340,7 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-1 gap-6">
             {latestPosts.map((post) => (
-              <Card key={post.id} className="overflow-hidden border-border bg-background shadow-sm">
+              <Card key={post.id} className="overflow-hidden border-border bg-background shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:border-primary/30">
                 <CardHeader className="pb-0">
                   <div className="flex items-center justify-between gap-2 mb-3">
                     <p className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -349,12 +357,14 @@ export default function HomePage() {
               </Card>
             ))}
           </div>
+          </SectionReveal>
         </section>
       )}
 
       {/* Latest Blogs (DB-driven) */}
       {!loading && latestBlogs.length > 0 && (
         <section className="container px-4">
+          <SectionReveal>
           <div className="flex items-end justify-between mb-8 border-b border-border pb-4">
             <h2 className="font-serif text-3xl tracking-tight">Latest Blog Posts</h2>
             <Link href="/blog">
@@ -366,7 +376,7 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {latestBlogs.map((blog) => (
               <Link key={blog.id} href={`/blog/${blog.slug}`} className="block">
-                <Card className="overflow-hidden border-border bg-background shadow-sm hover:shadow-md transition-shadow">
+                <Card className="overflow-hidden border-border bg-background shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-primary/40">
                   {blog.featured_image ? (
                     <div className="relative h-48 w-full overflow-hidden bg-muted">
                       <Image
@@ -388,6 +398,7 @@ export default function HomePage() {
               </Link>
             ))}
           </div>
+          </SectionReveal>
         </section>
       )}
 
@@ -401,6 +412,7 @@ export default function HomePage() {
 
       {/* Featured Skills (hardcoded, per architecture doc) */}
       <section className="container px-4">
+        <SectionReveal>
         <h2 className="font-serif text-3xl tracking-tight mb-8 border-b border-border pb-4">Top Skills</h2>
         {skills.length === 0 ? (
           <EmptyState title="No skills listed yet" message="Top skills will show up here once they're added." />
@@ -409,13 +421,14 @@ export default function HomePage() {
             {skills.slice(0, 8).map((skill) => (
               <div
                 key={skill.name}
-                className="px-4 py-2 rounded-none bg-secondary text-secondary-foreground font-medium border border-border text-sm"
+                className="px-4 py-2 rounded-none bg-secondary text-secondary-foreground font-medium border border-border text-sm transition-all duration-200 hover:bg-primary hover:text-primary-foreground hover:-translate-y-0.5 cursor-default"
               >
                 {skill.name}
               </div>
             ))}
           </div>
         )}
+        </SectionReveal>
       </section>
 
       {/* Recent Experience (hardcoded, per architecture doc) */}
