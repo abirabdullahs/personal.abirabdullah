@@ -6,15 +6,12 @@ import Link from 'next/link';
 import { motion } from 'motion/react';
 import { ArrowRight, Code, BookOpen, Image as ImageIcon, Loader2, Pin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { skills } from '@/data/skills';
 import { experiences } from '@/data/experiences';
 import { ventures } from '@/data/ventures';
 import { EmptyState } from '@/components/empty-state';
 import { GithubActivityFeed } from '@/components/github-activity-feed';
 import { SectionReveal } from '@/components/section-reveal';
-import { HeroAurora } from '@/components/hero-aurora';
 import { toast } from 'sonner';
 import { getSupabase } from '@/lib/supabase';
 import { optimizeCloudinaryUrl } from '@/lib/cloudinary-url';
@@ -28,6 +25,15 @@ import {
   type PortfolioBlog,
   type SiteAdminProfile,
 } from '@/lib/portfolio-data';
+
+// Cinematic dark palette, scoped to this page only (the rest of the site
+// keeps the light "Engineering Journal" theme) -- kept as named constants
+// so every section below stays visually consistent.
+const INK = '#0A0A0A';
+const PAPER = '#F2F0EA';
+const GOLD = '#D4A24C';
+const GOLD_HOVER = '#C3923F';
+const CARD = '#151515';
 
 export default function HomePage() {
   const [profile, setProfile] = React.useState<SiteAdminProfile>(createDefaultSiteProfile());
@@ -95,131 +101,119 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="flex flex-col gap-20 pb-20">
-      {/* Hero Section — editorial: image left, text right, hairline divider, serif display */}
-      <section className="relative overflow-hidden border-b border-border/70">
-        <HeroAurora />
-        <div className="mx-auto max-w-7xl px-4 py-20 md:px-6 md:py-28 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)] gap-10 xl:gap-24 items-center">
-            {/* Portrait */}
-            <motion.div
-              className="flex md:justify-start justify-center"
-              initial={{ opacity: 0, x: -16 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              {profile.avatar ? (
-                <img
-                  src={optimizeCloudinaryUrl(profile.avatar)}
-                  alt={profile.name}
-                  referrerPolicy="no-referrer"
-                  className="w-64 sm:w-80 lg:w-full lg:max-w-md h-auto rounded-xl shadow-[0_30px_70px_-25px_rgba(0,0,0,0.3)] dark:shadow-[0_30px_70px_-25px_rgba(0,0,0,0.7)]"
-                />
-              ) : (
-                <div className="w-64 h-64 sm:w-80 sm:h-80 rounded-xl bg-secondary flex items-center justify-center shadow-[0_30px_70px_-25px_rgba(0,0,0,0.3)] dark:shadow-[0_30px_70px_-25px_rgba(0,0,0,0.7)]">
-                  <span className="font-serif text-4xl text-secondary-foreground">
-                    {profile.name
-                      .split(' ')
-                      .map((n) => n[0])
-                      .join('')
-                      .slice(0, 2)
-                      .toUpperCase()}
-                  </span>
-                </div>
-              )}
-            </motion.div>
+    <div className="flex flex-col gap-20 pb-20" style={{ backgroundColor: INK, color: PAPER }}>
+      {/* Hero — full-bleed portrait backdrop, poster-style title */}
+      <section className="relative isolate overflow-hidden min-h-[620px] md:min-h-[760px] flex items-end">
+        <Image
+          src={optimizeCloudinaryUrl(profile.avatar) || '/images/png.png'}
+          alt={profile.name}
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-[center_20%]"
+        />
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              `linear-gradient(0deg, ${INK} 10%, rgba(10,10,10,0.55) 45%, rgba(10,10,10,0.1) 75%), linear-gradient(90deg, ${INK} 0%, rgba(10,10,10,0.3) 42%, transparent 72%)`,
+          }}
+        />
+        <motion.div
+          className="relative z-10 w-full px-6 md:px-10 lg:px-16 pb-14 md:pb-20"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="max-w-2xl">
+            <div className="flex items-center gap-2 mb-5">
+              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: GOLD }} />
+              <span className="text-xs font-semibold tracking-[0.2em] uppercase" style={{ color: GOLD }}>
+                Available for hire
+              </span>
+            </div>
 
-            {/* Copy */}
-            <motion.div
-              className="space-y-6 text-center md:text-left md:border-l md:border-border/70 md:pl-16 lg:pl-12"
-              initial={{ opacity: 0, x: 16 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.15 }}
-            >
-              <div className="flex items-center justify-center md:justify-start gap-2">
-                <span className="h-1.5 w-1.5 bg-primary" />
-                <span className="text-xs font-medium tracking-[0.2em] uppercase text-muted-foreground">
-                  Available for hire
-                </span>
-              </div>
+            <h1 className="font-serif text-5xl md:text-7xl lg:text-[5.5rem] leading-[0.95] tracking-tight mb-5">
+              {profile.name}
+            </h1>
 
-              <h1 className="font-serif text-4xl md:text-6xl tracking-tight leading-[1.05]">
-                {profile.name}
-              </h1>
-
-              {profile.headline && (
-                <p className="text-lg md:text-xl font-medium leading-relaxed">
-                  {profile.headline}
-                </p>
-              )}
-
-              <p className="text-base md:text-lg text-muted-foreground max-w-xl leading-relaxed font-light">
-                {profile.bio ||
-                  'CSE student, passionate about web development and exploring AI/ML. I enjoy building modern, user-focused applications while continuously learning and experimenting with new technologies.'}
+            {profile.headline && (
+              <p className="text-lg md:text-xl font-medium mb-4" style={{ color: GOLD }}>
+                {profile.headline}
               </p>
+            )}
 
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 pt-2">
-                <Link href="/projects">
-                  <Button size="lg" className="rounded-none px-6">
-                    View My Work <ArrowRight className="ml-2 h-4 w-4" />
+            <p className="text-base md:text-lg leading-relaxed max-w-xl mb-8" style={{ color: 'rgba(242,240,234,0.75)' }}>
+              {profile.bio ||
+                'CSE student, passionate about web development and exploring AI/ML. I enjoy building modern, user-focused applications while continuously learning and experimenting with new technologies.'}
+            </p>
+
+            <div className="flex flex-wrap items-center gap-4">
+              <Link href="/projects">
+                <Button
+                  size="lg"
+                  className="rounded-none px-7 h-12 text-sm font-semibold border-none"
+                  style={{ backgroundColor: GOLD, color: INK }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = GOLD_HOVER)}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = GOLD)}
+                >
+                  View My Work <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+              {profile.resume_link ? (
+                <a href={profile.resume_link} target="_blank" rel="noopener noreferrer">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="rounded-none px-7 h-12 text-sm font-semibold bg-transparent hover:bg-white/5"
+                    style={{ borderColor: 'rgba(242,240,234,0.3)', color: PAPER }}
+                  >
+                    Download Resume
                   </Button>
-                </Link>
+                </a>
+              ) : (
                 <Link href="/about">
-                  <Button size="lg" variant="outline" className="rounded-none px-6 border-foreground/30">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="rounded-none px-7 h-12 text-sm font-semibold bg-transparent hover:bg-white/5"
+                    style={{ borderColor: 'rgba(242,240,234,0.3)', color: PAPER }}
+                  >
                     Full Biography
                   </Button>
                 </Link>
-              </div>
-            </motion.div>
+              )}
+            </div>
           </div>
-        </div>
+        </motion.div>
       </section>
 
-      {/* Quick Stats/Summary */}
+      {/* Quick nav — Projects / Blog / Gallery */}
       <section className="container px-4">
-        <SectionReveal className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-border border-y border-border">
-          <Card className="group rounded-none border-0 shadow-none transition-all duration-200 hover:bg-accent/30 hover:-translate-y-0.5">
-            <CardHeader>
-              <Code className="h-6 w-6 text-primary mb-2 transition-transform duration-200 group-hover:scale-110" strokeWidth={1.5} />
-              <CardTitle className="font-serif text-2xl font-normal">Projects</CardTitle>
-              <CardDescription>Check out my latest work</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Link href="/projects">
-                <Button variant="link" className="px-0">
-                  Explore <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-          <Card className="group rounded-none border-0 shadow-none transition-all duration-200 hover:bg-accent/30 hover:-translate-y-0.5">
-            <CardHeader>
-              <BookOpen className="h-6 w-6 text-primary mb-2 transition-transform duration-200 group-hover:scale-110" strokeWidth={1.5} />
-              <CardTitle className="font-serif text-2xl font-normal">Blog</CardTitle>
-              <CardDescription>Thoughts on tech and development</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Link href="/blog">
-                <Button variant="link" className="px-0">
-                  Read More <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-          <Card className="group rounded-none border-0 shadow-none transition-all duration-200 hover:bg-accent/30 hover:-translate-y-0.5">
-            <CardHeader>
-              <ImageIcon className="h-6 w-6 text-primary mb-2 transition-transform duration-200 group-hover:scale-110" strokeWidth={1.5} />
-              <CardTitle className="font-serif text-2xl font-normal">Gallery</CardTitle>
-              <CardDescription>Capturing moments and achievements</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Link href="/gallery">
-                <Button variant="link" className="px-0">
-                  View Gallery <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
+        <SectionReveal className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[
+            { href: '/projects', icon: Code, title: 'Projects', desc: 'Check out my latest work' },
+            { href: '/blog', icon: BookOpen, title: 'Blog', desc: 'Thoughts on tech and development' },
+            { href: '/gallery', icon: ImageIcon, title: 'Gallery', desc: 'Capturing moments and achievements' },
+          ].map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="group block p-6 transition-all duration-200 hover:-translate-y-0.5"
+              style={{ backgroundColor: CARD, border: '1px solid rgba(242,240,234,0.1)' }}
+            >
+              <item.icon
+                className="h-6 w-6 mb-4 transition-transform duration-200 group-hover:scale-110"
+                strokeWidth={1.5}
+                style={{ color: GOLD }}
+              />
+              <h3 className="font-serif text-2xl mb-1">{item.title}</h3>
+              <p className="text-sm mb-4" style={{ color: 'rgba(242,240,234,0.55)' }}>{item.desc}</p>
+              <span className="inline-flex items-center gap-1 text-sm font-medium" style={{ color: GOLD }}>
+                Explore <ArrowRight className="h-4 w-4" />
+              </span>
+            </Link>
+          ))}
         </SectionReveal>
       </section>
 
@@ -227,19 +221,21 @@ export default function HomePage() {
       {!loading && featuredProjects.length > 0 && (
         <section className="container px-4">
           <SectionReveal>
-          <div className="flex items-end justify-between mb-8 border-b border-border pb-4">
+          <div className="flex items-end justify-between mb-8 pb-4" style={{ borderBottom: '1px solid rgba(242,240,234,0.12)' }}>
             <h2 className="font-serif text-3xl tracking-tight">Featured Projects</h2>
-            <Link href="/projects">
-              <Button variant="ghost" className="gap-1 text-sm">
-                View all <ArrowRight className="h-4 w-4" />
-              </Button>
+            <Link href="/projects" className="inline-flex items-center gap-1 text-sm hover:opacity-80" style={{ color: GOLD }}>
+              View all <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {featuredProjects.map((project) => (
-              <Card key={project.id} className="overflow-hidden border-border bg-background shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-primary/40">
+              <div
+                key={project.id}
+                className="overflow-hidden transition-all duration-300 hover:-translate-y-1"
+                style={{ backgroundColor: CARD, border: '1px solid rgba(242,240,234,0.1)' }}
+              >
                 {project.image_url ? (
-                  <div className="relative h-56 w-full overflow-hidden bg-muted">
+                  <div className="relative h-56 w-full overflow-hidden" style={{ backgroundColor: INK }}>
                     <Image
                       src={optimizeCloudinaryUrl(project.image_url)}
                       alt={project.name}
@@ -249,23 +245,27 @@ export default function HomePage() {
                     />
                   </div>
                 ) : (
-                  <div className="h-56 bg-muted" />
+                  <div className="h-56" style={{ backgroundColor: INK }} />
                 )}
-                <CardHeader className="pt-5">
-                  <CardTitle className="font-serif text-xl font-semibold">{project.name}</CardTitle>
-                  <CardDescription className="line-clamp-2">{project.short_description}</CardDescription>
-                </CardHeader>
-                <CardContent className="pt-0">
+                <div className="p-5">
+                  <h3 className="font-serif text-xl font-semibold mb-2">{project.name}</h3>
+                  <p className="text-sm line-clamp-2 mb-4" style={{ color: 'rgba(242,240,234,0.6)' }}>
+                    {project.short_description}
+                  </p>
                   <div className="flex flex-wrap gap-2">
                     {Array.isArray(project.tech_stack) &&
                       project.tech_stack.slice(0, 4).map((tech) => (
-                        <Badge key={tech} variant="secondary" className="rounded-none">
+                        <span
+                          key={tech}
+                          className="text-[11px] px-2.5 py-1"
+                          style={{ border: '1px solid rgba(242,240,234,0.2)', color: 'rgba(242,240,234,0.7)' }}
+                        >
                           {tech}
-                        </Badge>
+                        </span>
                       ))}
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
           </SectionReveal>
@@ -277,40 +277,46 @@ export default function HomePage() {
       {ventures.length > 0 && (
         <section className="container px-4">
           <SectionReveal>
-          <div className="flex items-end justify-between mb-8 border-b border-border pb-4">
+          <div className="flex items-end justify-between mb-8 pb-4" style={{ borderBottom: '1px solid rgba(242,240,234,0.12)' }}>
             <h2 className="font-serif text-3xl tracking-tight">Also Building</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {ventures.map((venture) => {
               const CardInner = (
-                <Card className="h-full rounded-none border-border transition-all duration-300 hover:border-primary/40 hover:-translate-y-1 hover:shadow-md">
-                  <CardHeader className="flex-row items-center gap-4 space-y-0">
+                <div
+                  className="h-full transition-all duration-300 hover:-translate-y-1 p-5"
+                  style={{ backgroundColor: CARD, border: '1px solid rgba(242,240,234,0.1)' }}
+                >
+                  <div className="flex items-center gap-4 mb-4">
                     {venture.logo_url ? (
-                      <div className="relative h-14 w-14 shrink-0 overflow-hidden border border-border">
+                      <div className="relative h-14 w-14 shrink-0 overflow-hidden" style={{ border: '1px solid rgba(242,240,234,0.15)' }}>
                         <Image src={optimizeCloudinaryUrl(venture.logo_url)} alt={`${venture.name} logo`} fill className="object-cover" referrerPolicy="no-referrer" />
                       </div>
                     ) : (
-                      <div className="h-14 w-14 shrink-0 flex items-center justify-center bg-foreground text-background font-serif text-2xl">
+                      <div
+                        className="h-14 w-14 shrink-0 flex items-center justify-center font-serif text-2xl"
+                        style={{ backgroundColor: GOLD, color: INK }}
+                      >
                         {venture.name.charAt(0)}
                       </div>
                     )}
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <CardTitle className="font-serif text-xl font-semibold">{venture.name}</CardTitle>
-                        <Badge variant="outline" className="rounded-none font-mono text-[10px] shrink-0">{venture.badge}</Badge>
+                        <h3 className="font-serif text-xl font-semibold">{venture.name}</h3>
+                        <span className="font-mono text-[10px] px-2 py-0.5 shrink-0" style={{ border: '1px solid rgba(242,240,234,0.25)', color: 'rgba(242,240,234,0.6)' }}>
+                          {venture.badge}
+                        </span>
                       </div>
-                      <CardDescription className="text-sm">{venture.tagline}</CardDescription>
+                      <p className="text-sm" style={{ color: 'rgba(242,240,234,0.55)' }}>{venture.tagline}</p>
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{venture.description}</p>
-                    {venture.link && (
-                      <span className="inline-flex items-center gap-1 text-sm font-medium mt-3 text-primary">
-                        Visit site <ArrowRight className="h-3.5 w-3.5" />
-                      </span>
-                    )}
-                  </CardContent>
-                </Card>
+                  </div>
+                  <p className="text-sm leading-relaxed" style={{ color: 'rgba(242,240,234,0.6)' }}>{venture.description}</p>
+                  {venture.link && (
+                    <span className="inline-flex items-center gap-1 text-sm font-medium mt-3" style={{ color: GOLD }}>
+                      Visit site <ArrowRight className="h-3.5 w-3.5" />
+                    </span>
+                  )}
+                </div>
               );
 
               return venture.link ? (
@@ -330,31 +336,34 @@ export default function HomePage() {
       {!loading && latestPosts.length > 0 && (
         <section className="container px-4">
           <SectionReveal>
-          <div className="flex items-end justify-between mb-8 border-b border-border pb-4">
+          <div className="flex items-end justify-between mb-8 pb-4" style={{ borderBottom: '1px solid rgba(242,240,234,0.12)' }}>
             <h2 className="font-serif text-3xl tracking-tight">Latest Updates</h2>
-            <Link href="/posts">
-              <Button variant="ghost" className="gap-1 text-sm">
-                View all <ArrowRight className="h-4 w-4" />
-              </Button>
+            <Link href="/posts" className="inline-flex items-center gap-1 text-sm hover:opacity-80" style={{ color: GOLD }}>
+              View all <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-          <div className="grid grid-cols-1 gap-6">
+          <div className="grid grid-cols-1 gap-4">
             {latestPosts.map((post) => (
-              <Card key={post.id} className="overflow-hidden border-border bg-background shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:border-primary/30">
-                <CardHeader className="pb-0">
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                      {post.created_at ? new Date(post.created_at).toLocaleDateString() : ''}
-                    </p>
-                    {post.pinned && (
-                      <Badge variant="default" className="gap-1 rounded-none">
-                        <Pin className="h-3 w-3" /> Pinned
-                      </Badge>
-                    )}
-                  </div>
-                  <CardDescription className="line-clamp-3 text-sm text-muted-foreground">{post.text}</CardDescription>
-                </CardHeader>
-              </Card>
+              <div
+                key={post.id}
+                className="p-5 transition-all duration-300 hover:-translate-y-0.5"
+                style={{ backgroundColor: CARD, border: '1px solid rgba(242,240,234,0.1)' }}
+              >
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <p className="text-xs uppercase tracking-wide" style={{ color: 'rgba(242,240,234,0.5)' }}>
+                    {post.created_at ? new Date(post.created_at).toLocaleDateString() : ''}
+                  </p>
+                  {post.pinned && (
+                    <span
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5"
+                      style={{ backgroundColor: GOLD, color: INK }}
+                    >
+                      <Pin className="h-3 w-3" /> Pinned
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm line-clamp-3" style={{ color: 'rgba(242,240,234,0.65)' }}>{post.text}</p>
+              </div>
             ))}
           </div>
           </SectionReveal>
@@ -365,36 +374,37 @@ export default function HomePage() {
       {!loading && latestBlogs.length > 0 && (
         <section className="container px-4">
           <SectionReveal>
-          <div className="flex items-end justify-between mb-8 border-b border-border pb-4">
+          <div className="flex items-end justify-between mb-8 pb-4" style={{ borderBottom: '1px solid rgba(242,240,234,0.12)' }}>
             <h2 className="font-serif text-3xl tracking-tight">Latest Blog Posts</h2>
-            <Link href="/blog">
-              <Button variant="ghost" className="gap-1 text-sm">
-                View all <ArrowRight className="h-4 w-4" />
-              </Button>
+            <Link href="/blog" className="inline-flex items-center gap-1 text-sm hover:opacity-80" style={{ color: GOLD }}>
+              View all <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {latestBlogs.map((blog) => (
-              <Link key={blog.id} href={`/blog/${blog.slug}`} className="block">
-                <Card className="overflow-hidden border-border bg-background shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-primary/40">
-                  {blog.featured_image ? (
-                    <div className="relative h-48 w-full overflow-hidden bg-muted">
-                      <Image
-                        src={optimizeCloudinaryUrl(blog.featured_image)}
-                        alt={blog.title}
-                        fill
-                        className="object-cover transition-transform duration-300 hover:scale-105"
-                        referrerPolicy="no-referrer"
-                      />
-                    </div>
-                  ) : (
-                    <div className="h-48 bg-muted" />
-                  )}
-                  <CardHeader>
-                    <CardTitle className="font-serif text-xl font-semibold">{blog.title}</CardTitle>
-                    <CardDescription className="line-clamp-3 text-sm text-muted-foreground">{blog.excerpt}</CardDescription>
-                  </CardHeader>
-                </Card>
+              <Link
+                key={blog.id}
+                href={`/blog/${blog.slug}`}
+                className="block overflow-hidden transition-all duration-300 hover:-translate-y-1"
+                style={{ backgroundColor: CARD, border: '1px solid rgba(242,240,234,0.1)' }}
+              >
+                {blog.featured_image ? (
+                  <div className="relative h-48 w-full overflow-hidden" style={{ backgroundColor: INK }}>
+                    <Image
+                      src={optimizeCloudinaryUrl(blog.featured_image)}
+                      alt={blog.title}
+                      fill
+                      className="object-cover transition-transform duration-300 hover:scale-105"
+                      referrerPolicy="no-referrer"
+                    />
+                  </div>
+                ) : (
+                  <div className="h-48" style={{ backgroundColor: INK }} />
+                )}
+                <div className="p-5">
+                  <h3 className="font-serif text-xl font-semibold mb-2">{blog.title}</h3>
+                  <p className="text-sm line-clamp-3" style={{ color: 'rgba(242,240,234,0.6)' }}>{blog.excerpt}</p>
+                </div>
               </Link>
             ))}
           </div>
@@ -404,7 +414,7 @@ export default function HomePage() {
 
       {loading && (
         <section className="container px-4 flex justify-center py-4">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <Loader2 className="h-6 w-6 animate-spin" style={{ color: 'rgba(242,240,234,0.5)' }} />
         </section>
       )}
 
@@ -413,7 +423,7 @@ export default function HomePage() {
       {/* Featured Skills (hardcoded, per architecture doc) */}
       <section className="container px-4">
         <SectionReveal>
-        <h2 className="font-serif text-3xl tracking-tight mb-8 border-b border-border pb-4">Top Skills</h2>
+        <h2 className="font-serif text-3xl tracking-tight mb-8 pb-4" style={{ borderBottom: '1px solid rgba(242,240,234,0.12)' }}>Top Skills</h2>
         {skills.length === 0 ? (
           <EmptyState title="No skills listed yet" message="Top skills will show up here once they're added." />
         ) : (
@@ -421,7 +431,10 @@ export default function HomePage() {
             {skills.slice(0, 8).map((skill) => (
               <div
                 key={skill.name}
-                className="px-4 py-2 rounded-none bg-secondary text-secondary-foreground font-medium border border-border text-sm transition-all duration-200 hover:bg-primary hover:text-primary-foreground hover:-translate-y-0.5 cursor-default"
+                className="px-4 py-2 font-medium text-sm transition-all duration-200 hover:-translate-y-0.5 cursor-default"
+                style={{ border: '1px solid rgba(242,240,234,0.2)', color: PAPER }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = GOLD; e.currentTarget.style.color = INK; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = PAPER; }}
               >
                 {skill.name}
               </div>

@@ -100,35 +100,38 @@ export function GithubActivityFeed() {
 
   if (failed || (!loading && items.length === 0)) return null;
 
+  const GOLD = '#D4A24C';
+
   return (
     <section className="container px-4">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-8 pb-4" style={{ borderBottom: '1px solid rgba(242,240,234,0.12)' }}>
         <h2 className="font-serif text-3xl tracking-tight">GitHub Activity</h2>
         <Link href={`https://github.com/${GITHUB_USERNAME}`} target="_blank" rel="noopener noreferrer">
-          <span className="text-sm text-muted-foreground hover:text-foreground transition-colors">@{GITHUB_USERNAME} →</span>
+          <span className="text-sm hover:opacity-80 transition-opacity" style={{ color: GOLD }}>@{GITHUB_USERNAME} →</span>
         </Link>
       </div>
 
       {loading ? (
         <div className="flex justify-center py-10">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <Loader2 className="h-6 w-6 animate-spin" style={{ color: 'rgba(242,240,234,0.5)' }} />
         </div>
       ) : (
-        <div className="divide-y divide-border border-t border-b border-border max-w-2xl">
-          {items.map((item) => (
+        <div className="max-w-2xl" style={{ border: '1px solid rgba(242,240,234,0.1)' }}>
+          {items.map((item, idx) => (
             <a
               key={item.id}
               href={item.repoUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-3 py-4 group hover:bg-accent/40 transition-colors -mx-2 px-2"
+              className="flex items-center gap-3 py-4 px-4 group hover:bg-white/5 transition-colors"
+              style={idx > 0 ? { borderTop: '1px solid rgba(242,240,234,0.1)' } : undefined}
             >
-              <span className="text-muted-foreground shrink-0">{item.icon}</span>
+              <span className="shrink-0" style={{ color: 'rgba(242,240,234,0.5)' }}>{item.icon}</span>
               <span className="text-sm flex-1 min-w-0">
-                <span className="text-muted-foreground">{item.text}</span>{' '}
-                <span className="font-medium group-hover:text-primary transition-colors">{item.repoName}</span>
+                <span style={{ color: 'rgba(242,240,234,0.55)' }}>{item.text}</span>{' '}
+                <span className="font-medium transition-colors" style={{ color: '#F2F0EA' }}>{item.repoName}</span>
               </span>
-              <span className="font-mono text-[11px] text-muted-foreground shrink-0">{timeAgo(item.createdAt)}</span>
+              <span className="font-mono text-[11px] shrink-0" style={{ color: 'rgba(242,240,234,0.45)' }}>{timeAgo(item.createdAt)}</span>
             </a>
           ))}
         </div>
