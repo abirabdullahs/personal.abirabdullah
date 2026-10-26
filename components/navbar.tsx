@@ -7,7 +7,6 @@ import { Menu, User, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
-import { ThemeToggle } from '@/components/theme-toggle';
 
 const navItems = [
   { name: 'Home', href: '/' },
@@ -47,7 +46,6 @@ export function Navbar() {
         </nav>
 
         <div className="flex items-center space-x-2">
-          <ThemeToggle />
           <Link href="/admin/dashboard" className="hidden md:block">
             <Button variant="ghost" size="icon" className="hover:bg-accent">
               <User className="h-5 w-5" />
@@ -65,7 +63,6 @@ export function Navbar() {
               <div className="flex flex-col h-full bg-background">
                 <div className="p-6 border-b flex items-center justify-between">
                   <span className="text-xl font-heading font-semibold tracking-tight">Menu</span>
-                  <ThemeToggle />
                 </div>
                 <nav className="flex-1 px-6 py-8 flex flex-col gap-6">
                   {navItems.map((item) => (

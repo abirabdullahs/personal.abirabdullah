@@ -85,6 +85,40 @@
   --sidebar-ring: #6FA98A80;
 }
 
+/* Cinematic dark + gold theme for the public-facing site. Scoped to the
+   .cinematic wrapper (app/(public)/layout.tsx) rather than :root/.dark, so
+   the admin dashboard keeps its own neutral theme untouched. Overrides the
+   same token names every shared component already reads, so pages built on
+   those tokens reskin automatically with no per-page changes needed. */
+.cinematic {
+  --background: #0A0A0A;
+  --foreground: #F2F0EA;
+  --card: #151515;
+  --card-foreground: #F2F0EA;
+  --popover: #151515;
+  --popover-foreground: #F2F0EA;
+  --primary: #D4A24C;
+  --primary-foreground: #0A0A0A;
+  --secondary: #1C1C1C;
+  --secondary-foreground: #F2F0EA;
+  --muted: #1C1C1C;
+  --muted-foreground: #8A867C;
+  --accent: #1C1C1C;
+  --accent-foreground: #F2F0EA;
+  --destructive: #C4593D;
+  --destructive-foreground: #0A0A0A;
+  --border: #F2F0EA1F;
+  --input: #F2F0EA1F;
+  --ring: #D4A24C80;
+  --highlight: #E2874B;
+  --highlight-foreground: #0A0A0A;
+  --chart-1: #D4A24C;
+  --chart-2: #8A867C;
+  --chart-3: #E2874B;
+  --chart-4: #6B5A3A;
+  --chart-5: #F2F0EA;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
